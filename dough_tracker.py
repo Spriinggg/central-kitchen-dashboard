@@ -2,13 +2,12 @@
 DOUGH TRACKER — Central Kitchen agent (US Pizza)
 ------------------------------------------------
 Purpose: know exactly what the kitchen made and what it wasted.
-It reads production records, compares them against recipe standards,
-and produces yield % and waste % per dough size.
+It reads production records, compares them against the REAL recipe
+standard, and produces yield % and waste % per dough size.
 
-For now it uses SAMPLE data and writes the result to a JSON file.
-Later, the two TODO points below become: (1) read from Supabase,
-(2) write to Supabase (via the Loader Agent). The maths in between
-does not change.
+The recipe standard is now loaded from recipe_standard.json (the same
+file the dashboard's Recipes tab uses), so there is ONE source of truth.
+If the recipe changes, this agent follows automatically.
 
 Run:  python3 dough_tracker.py
 """
@@ -18,105 +17,111 @@ from datetime import datetime
 
 
 # ---------------------------------------------------------------------------
-# 1. RECIPE STANDARDS  (PLACEHOLDER — real numbers will come from supervisor)
+# 1. LOAD RECIPE STANDARD  (real data, from recipe_standard.json)
 # ---------------------------------------------------------------------------
-# standard_ratio = how many kg of dough 1 kg of flour SHOULD produce.
-# waste_limit    = the acceptable waste %; above this we flag it.
-# These are guesses so the logic can run. Swap them for the real recipe.
-RECIPE_STANDARD = {
-    "Personal (6\")": {"standard_ratio": 1.60, "waste_limit": 4.0},
-    "Regular (9\")":  {"standard_ratio": 1.60, "waste_limit": 4.0},
-    "Large (13\")":   {"standard_ratio": 1.60, "waste_limit": 5.0},
+# Map our dough sizes to their recipe name + finished piece weight (grams).
+DOUGH_MAP = {
+    "Personal (6\")": {"recipe": "FROZEN DOUGH PERSONAL 100G", "piece_g": 100},
+    "Regular (9\")":  {"recipe": "FROZEN DOUGH REGULAR 210G",  "piece_g": 210},
+    "Large (13\")":   {"recipe": "FROZEN DOUGH LARGE 380G",    "piece_g": 380},
 }
+WASTE_LIMIT = {"Personal (6\")": 4.0, "Regular (9\")": 4.0, "Large (13\")": 5.0}
+
+
+def load_recipe_standards(path="recipe_standard.json"):
+    """Build {size: standard_ratio} from the real recipe file.
+
+    standard_ratio = kg of dough that 1 kg of flour SHOULD produce, worked out
+    from the recipe: (pieces per batch x piece weight) / flour used per batch.
+    """
+    with open(path) as f:
+        data = json.load(f)
+    by_name = {r["name"]: r for r in data["recipes"]}
+    standards = {}
+    for size, m in DOUGH_MAP.items():
+        rec = by_name.get(m["recipe"])
+        if not rec:
+            continue
+        flour = next((i for i in rec["ingredients"] if "flour" in i["name"].lower()), None)
+        if not flour or not flour.get("grams"):
+            continue
+        dough_g = rec["yield_qty"] * m["piece_g"]        # total dough out (g)
+        ratio = dough_g / flour["grams"]                 # dough kg per flour kg
+        standards[size] = round(ratio, 3)
+    return standards
 
 
 # ---------------------------------------------------------------------------
-# 2. PRODUCTION RECORDS  (SAMPLE — later this is read from Supabase)
+# 2. PRODUCTION RECORDS  (SAMPLE — later read from the daily Excel / Supabase)
 # ---------------------------------------------------------------------------
-# For each dough size on a given day:
-#   flour_used_kg  = raw flour that went in
-#   produced_kg    = total dough that came out (good + wasted)
-#   wasted_kg      = dough that could not be used (over-proofed, trimmings, spoiled)
-# TODO(Supabase): replace this list with a query on the production_records table.
 PRODUCTION_RECORDS = [
-    {"date": "2026-09-15", "size": "Personal (6\")", "flour_used_kg": 50,  "produced_kg": 67,  "wasted_kg": 9},
-    {"date": "2026-09-15", "size": "Regular (9\")",  "flour_used_kg": 80,  "produced_kg": 98, "wasted_kg": 2},
-    {"date": "2026-09-15", "size": "Large (13\")",   "flour_used_kg": 60,  "produced_kg": 120,  "wasted_kg": 13},
+    {"date": "2026-09-21", "size": "Personal (6\")", "flour_used_kg": 50, "produced_kg": 79,  "wasted_kg": 2},
+    {"date": "2026-09-21", "size": "Regular (9\")",  "flour_used_kg": 80, "produced_kg": 126, "wasted_kg": 4},
+    {"date": "2026-09-21", "size": "Large (13\")",   "flour_used_kg": 60, "produced_kg": 92,  "wasted_kg": 7},
 ]
 
 
 # ---------------------------------------------------------------------------
-# 3. THE CORE LOGIC  (this is the part that never changes)
+# 3. CORE LOGIC
 # ---------------------------------------------------------------------------
-def analyse_record(record):
-    """Take one production record and return yield %, waste %, and a flag."""
-    std = RECIPE_STANDARD[record["size"]]
+def analyse_record(record, standards):
+    ratio = standards.get(record["size"], 1.6)   # fallback if recipe missing
+    limit = WASTE_LIMIT.get(record["size"], 5.0)
 
-    # How much dough the recipe SAYS we should have gotten from this flour.
-    expected_kg = record["flour_used_kg"] * std["standard_ratio"]
-
-    # Usable dough = everything produced minus what was wasted.
+    expected_kg = record["flour_used_kg"] * ratio
     good_kg = record["produced_kg"] - record["wasted_kg"]
-
-    # Yield % = how close the usable output was to the expected standard.
     yield_pct = round(good_kg / expected_kg * 100, 1) if expected_kg else 0
-
-    # Waste % = how much of what we produced was thrown away.
     waste_pct = round(record["wasted_kg"] / record["produced_kg"] * 100, 1) if record["produced_kg"] else 0
 
-    # Decide severity. (Simple rules for now; tune the thresholds later.)
-    if waste_pct > std["waste_limit"] + 3:
+    if waste_pct > limit + 3:
         severity = "high"
-    elif waste_pct > std["waste_limit"]:
+    elif waste_pct > limit:
         severity = "medium"
     else:
         severity = "low"
 
     return {
-        "date": record["date"],
-        "size": record["size"],
-        "expected_kg": round(expected_kg, 1),
-        "good_kg": good_kg,
-        "wasted_kg": record["wasted_kg"],
-        "yield_pct": yield_pct,
-        "waste_pct": waste_pct,
-        "severity": severity,
+        "date": record["date"], "size": record["size"],
+        "standard_ratio": ratio, "expected_kg": round(expected_kg, 1),
+        "good_kg": good_kg, "wasted_kg": record["wasted_kg"],
+        "yield_pct": yield_pct, "waste_pct": waste_pct, "severity": severity,
     }
 
 
 def run():
-    """Analyse every record, print a report, and save the output."""
-    results = [analyse_record(r) for r in PRODUCTION_RECORDS]
+    try:
+        standards = load_recipe_standards()
+        src = "recipe_standard.json (real recipe)"
+    except FileNotFoundError:
+        standards = {}
+        src = "fallback ratio 1.6 (recipe file not found)"
 
-    # ---- overall summary (weighted by kg produced) ----
+    results = [analyse_record(r, standards) for r in PRODUCTION_RECORDS]
     total_produced = sum(r["produced_kg"] for r in PRODUCTION_RECORDS)
     total_wasted = sum(r["wasted_kg"] for r in PRODUCTION_RECORDS)
     overall_waste = round(total_wasted / total_produced * 100, 1) if total_produced else 0
 
-    # ---- print a readable report to the screen ----
-    print("=" * 52)
+    print("=" * 56)
     print("  DOUGH TRACKER — daily report")
     print("  generated:", datetime.now().strftime("%Y-%m-%d %H:%M"))
-    print("=" * 52)
+    print("  recipe source:", src)
+    print("=" * 56)
     for r in results:
         tag = {"high": "[HIGH]", "medium": "[MED] ", "low": "[ok]  "}[r["severity"]]
-        print(f"  {tag} {r['size']:<14}  yield {r['yield_pct']:>5}%   waste {r['waste_pct']:>4}%")
-    print("-" * 52)
-    print(f"  Overall waste: {overall_waste}%   |   total produced: {total_produced} kg")
-    print("=" * 52)
+        print(f"  {tag} {r['size']:<14} ratio {r['standard_ratio']:<5} yield {r['yield_pct']:>5}%  waste {r['waste_pct']:>4}%")
+    print("-" * 56)
+    print(f"  Overall waste: {overall_waste}%  |  total produced: {total_produced} kg")
+    print("=" * 56)
 
-    # ---- write the output (this is the stand-in for Supabase) ----
-    # TODO(Supabase): instead of writing a file, insert `results` into the
-    # waste_yield table (through the Loader Agent).
     output = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "recipe_source": src,
         "overall_waste_pct": overall_waste,
         "records": results,
     }
     with open("dough_tracker_output.json", "w") as f:
         json.dump(output, f, indent=2)
-    print("\n  Saved -> dough_tracker_output.json")
-    print("  (this file is what the dashboard will read until Supabase is ready)\n")
+    print("\n  Saved -> dough_tracker_output.json\n")
 
 
 if __name__ == "__main__":

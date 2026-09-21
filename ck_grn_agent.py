@@ -1,17 +1,16 @@
 """
 CK GRN AGENT (Phase 1) — Central Kitchen agent (US Pizza)
 ---------------------------------------------------------
-Purpose: raw materials in, finished goods out — and check whether the maths works.
-It compares how much material was ACTUALLY used against how much SHOULD have been
-used (from the recipe), flags the variance, and guesses the most likely cause:
+Purpose: raw materials in, finished goods out — check whether the maths works.
+It compares how much material was ACTUALLY used against how much SHOULD have
+been used (from the recipe), flags the variance, and guesses the likely cause:
   - supplier short-delivery  -> Finance AP
   - waste                    -> Training
   - theft                    -> CCTV / Audit
 
-Phase 2 (later) = auto-order. Not in this file yet.
-
-Same shape as the other agents:
-  1) recipe standard   2) sample data   3) core logic   4) run + save JSON
+Flour's expected usage is now derived from the REAL recipe
+(recipe_standard.json): flour-per-piece x pieces produced, by dough size.
+Cheese & sauce still use placeholder standards until their recipes are added.
 
 Run:  python3 ck_grn_agent.py
 """
@@ -21,62 +20,81 @@ from datetime import datetime
 
 
 # ---------------------------------------------------------------------------
-# 1. RECIPE STANDARD  (DUMMY — grams of each material per pizza. Real numbers
-#    will come from the supervisor. TODO(Supabase): move to a shared table.)
+# 1. RECIPE STANDARD — flour from real recipe; cheese/sauce placeholder
 # ---------------------------------------------------------------------------
-RECIPE_STANDARD = {
-    "Dough (flour)": {"grams_per_pizza": 250},
-    "Cheese":        {"grams_per_pizza": 150},
-    "Sauce":         {"grams_per_pizza": 80},
+DOUGH_MAP = {
+    "Personal (6\")": "FROZEN DOUGH PERSONAL 100G",
+    "Regular (9\")":  "FROZEN DOUGH REGULAR 210G",
+    "Large (13\")":   "FROZEN DOUGH LARGE 380G",
 }
 
-# How many pizzas the kitchen made today (dummy total). Drives expected usage.
-PIZZAS_MADE = 1000
+# Placeholder — grams per pizza (cheese/sauce recipes not provided yet)
+PLACEHOLDER = {"Cheese": 150, "Sauce": 80}
 
-# Thresholds (tune later)
-DELIVERY_GAP_LIMIT = 2.0   # % short on delivery before we flag short-delivery
-USAGE_WARN = 5.0           # % over-usage → medium (waste)
-USAGE_HIGH = 12.0          # % over-usage → high (possible theft)
+# Pizzas produced today, by dough size (SAMPLE — later from POS/production Excel)
+PRODUCTION_BY_SIZE = {"Personal (6\")": 1200, "Regular (9\")": 1000, "Large (13\")": 600}
+# Total pizzas (for cheese/sauce placeholder expected usage)
+PIZZAS_MADE = sum(PRODUCTION_BY_SIZE.values())
+
+DELIVERY_GAP_LIMIT = 2.0
+USAGE_WARN = 5.0
+USAGE_HIGH = 12.0
+
+
+def flour_per_piece(path="recipe_standard.json"):
+    """Return {size: flour grams per piece} from the real recipe file."""
+    with open(path) as f:
+        data = json.load(f)
+    by_name = {r["name"]: r for r in data["recipes"]}
+    out = {}
+    for size, rname in DOUGH_MAP.items():
+        rec = by_name.get(rname)
+        if not rec:
+            continue
+        fl = next((i for i in rec["ingredients"] if "flour" in i["name"].lower()), None)
+        if fl and fl.get("grams") and rec["yield_qty"]:
+            out[size] = fl["grams"] / rec["yield_qty"]
+    return out
+
+
+def expected_flour_kg():
+    """Expected flour = sum(pieces x flour-per-piece) across sizes, from recipe."""
+    fpp = flour_per_piece()
+    total_g = sum(PRODUCTION_BY_SIZE.get(s, 0) * g for s, g in fpp.items())
+    return round(total_g / 1000, 1), fpp
 
 
 # ---------------------------------------------------------------------------
-# 2. STOCK RECORDS  (DUMMY GRN + stock snapshots — later read from Supabase)
+# 2. STOCK RECORDS  (SAMPLE GRN + snapshots — later from the daily Excel)
 # ---------------------------------------------------------------------------
-# ordered_kg  = what we ordered from the supplier
-# received_kg = what actually arrived (from the GRN)
-# opening_kg  = stock at the 9:00 AM snapshot
-# closing_kg  = stock at the 10:30 PM snapshot
-# TODO(Supabase): replace with a query on stock_movements + GRN.
+# expected_used_kg is filled for flour from the recipe; for others from placeholder.
 STOCK_RECORDS = [
-    {"material": "Dough (flour)", "ordered_kg": 260, "received_kg": 260, "opening_kg": 40, "closing_kg": 34},
-    {"material": "Cheese",        "ordered_kg": 160, "received_kg": 150, "opening_kg": 30, "closing_kg": 28},
-    {"material": "Sauce",         "ordered_kg": 85,  "received_kg": 85,  "opening_kg": 20, "closing_kg": 10},
+    {"material": "Dough (flour)", "ordered_kg": 320, "received_kg": 320, "opening_kg": 40, "closing_kg": 22},
+    {"material": "Cheese",        "ordered_kg": 450, "received_kg": 435, "opening_kg": 30, "closing_kg": 33},
+    {"material": "Sauce",         "ordered_kg": 230, "received_kg": 230, "opening_kg": 20, "closing_kg": 12},
 ]
 
 
 # ---------------------------------------------------------------------------
-# 3. THE CORE LOGIC
+# 3. CORE LOGIC
 # ---------------------------------------------------------------------------
-def analyse_material(record):
-    """Work out how much was used vs expected, and guess the cause of any gap."""
+def analyse_material(record, flour_expected):
     material = record["material"]
-    std = RECIPE_STANDARD[material]
 
-    # How much the recipe SAYS we should have used for today's production.
-    expected_used = PIZZAS_MADE * std["grams_per_pizza"] / 1000   # kg
+    if material == "Dough (flour)":
+        expected_used = flour_expected
+        basis = "real recipe"
+    else:
+        key = "Cheese" if "Cheese" in material else "Sauce"
+        expected_used = PIZZAS_MADE * PLACEHOLDER[key] / 1000
+        basis = "placeholder"
 
-    # How much we ACTUALLY used = opening + received - closing.
     actual_used = record["opening_kg"] + record["received_kg"] - record["closing_kg"]
-
-    # Usage variance (positive = used more than the recipe expects).
     usage_variance = round(actual_used - expected_used, 1)
     usage_variance_pct = round(usage_variance / expected_used * 100, 1) if expected_used else 0
-
-    # Delivery gap (positive = supplier delivered less than ordered).
     delivery_gap = record["ordered_kg"] - record["received_kg"]
     delivery_gap_pct = round(delivery_gap / record["ordered_kg"] * 100, 1) if record["ordered_kg"] else 0
 
-    # ---- guess the most likely cause ----
     if delivery_gap_pct >= DELIVERY_GAP_LIMIT:
         cause, dept, severity = "supplier short-delivery", "Finance AP", "high"
         note = f"received {delivery_gap}kg less than ordered"
@@ -91,40 +109,43 @@ def analyse_material(record):
         note = "usage matches recipe"
 
     return {
-        "material": material,
-        "expected_used_kg": round(expected_used, 1),
-        "actual_used_kg": actual_used,
-        "usage_variance_pct": usage_variance_pct,
-        "delivery_gap_kg": delivery_gap,
-        "cause": cause,
-        "route_to": dept,
-        "severity": severity,
-        "note": note,
+        "material": material, "basis": basis,
+        "expected_used_kg": round(expected_used, 1), "actual_used_kg": actual_used,
+        "usage_variance_pct": usage_variance_pct, "delivery_gap_kg": delivery_gap,
+        "cause": cause, "route_to": dept, "severity": severity, "note": note,
     }
 
 
 def run():
-    results = [analyse_material(r) for r in STOCK_RECORDS]
+    try:
+        flour_expected, fpp = expected_flour_kg()
+        src = "recipe_standard.json (flour = real recipe)"
+    except FileNotFoundError:
+        flour_expected, fpp = 300.0, {}
+        src = "fallback (recipe file not found)"
 
-    print("=" * 66)
+    results = [analyse_material(r, flour_expected) for r in STOCK_RECORDS]
+
+    print("=" * 68)
     print("  CK GRN AGENT — usage variance & cause")
     print("  generated:", datetime.now().strftime("%Y-%m-%d %H:%M"))
-    print("=" * 66)
+    print("  source:", src)
+    if fpp:
+        print("  flour/piece:", ", ".join(f"{s.split()[0]} {g:.1f}g" for s, g in fpp.items()))
+    print("=" * 68)
     for r in results:
         tag = {"high": "[HIGH]", "medium": "[MED] ", "low": "[ok]  "}[r["severity"]]
-        print(f"  {tag} {r['material']:<14} var {r['usage_variance_pct']:>5}%   "
-              f"→ {r['cause']} ({r['route_to']})")
-    print("=" * 66)
+        print(f"  {tag} {r['material']:<14} ({r['basis']:<11}) var {r['usage_variance_pct']:>6}%  → {r['cause']} ({r['route_to']})")
+    print("=" * 68)
 
-    # TODO(Supabase): insert `results` into usage_variance table via Loader.
     output = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "source": src,
         "records": results,
     }
     with open("ck_grn_output.json", "w") as f:
         json.dump(output, f, indent=2)
-    print("\n  Saved -> ck_grn_output.json")
-    print("  (the dashboard reads this for the Usage variance alerts card)\n")
+    print("\n  Saved -> ck_grn_output.json\n")
 
 
 if __name__ == "__main__":

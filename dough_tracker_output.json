@@ -1,36 +1,40 @@
 {
-  "generated_at": "2026-09-21T09:25:51",
-  "overall_waste_pct": 8.4,
+  "generated_at": "2026-09-21T14:01:56",
+  "recipe_source": "recipe_standard.json (real recipe)",
+  "overall_waste_pct": 4.4,
   "records": [
     {
-      "date": "2026-09-15",
+      "date": "2026-09-21",
       "size": "Personal (6\")",
+      "standard_ratio": 1.6,
       "expected_kg": 80.0,
-      "good_kg": 58,
-      "wasted_kg": 9,
-      "yield_pct": 72.5,
-      "waste_pct": 13.4,
-      "severity": "high"
-    },
-    {
-      "date": "2026-09-15",
-      "size": "Regular (9\")",
-      "expected_kg": 128.0,
-      "good_kg": 96,
+      "good_kg": 77,
       "wasted_kg": 2,
-      "yield_pct": 75.0,
-      "waste_pct": 2.0,
+      "yield_pct": 96.2,
+      "waste_pct": 2.5,
       "severity": "low"
     },
     {
-      "date": "2026-09-15",
+      "date": "2026-09-21",
+      "size": "Regular (9\")",
+      "standard_ratio": 1.596,
+      "expected_kg": 127.7,
+      "good_kg": 122,
+      "wasted_kg": 4,
+      "yield_pct": 95.6,
+      "waste_pct": 3.2,
+      "severity": "low"
+    },
+    {
+      "date": "2026-09-21",
       "size": "Large (13\")",
-      "expected_kg": 96.0,
-      "good_kg": 107,
-      "wasted_kg": 13,
-      "yield_pct": 111.5,
-      "waste_pct": 10.8,
-      "severity": "high"
+      "standard_ratio": 1.596,
+      "expected_kg": 95.8,
+      "good_kg": 85,
+      "wasted_kg": 7,
+      "yield_pct": 88.8,
+      "waste_pct": 7.6,
+      "severity": "medium"
     }
   ]
 }
