@@ -16,7 +16,7 @@
       "dimension": "12 PIECES X 1 PACKET",
       "ingredients": [
         {
-          "name": "",
+          "name": "Water",
           "group": "WATER",
           "qty": 1.28,
           "unit": "KG",
@@ -84,7 +84,8 @@
           "qty": 15.0,
           "unit": "PCS",
           "grams": null,
-          "per_unit": 0.125
+          "per_unit": 0.125,
+          "grams_per_unit": null
         }
       ],
       "category": "DOUGH"
@@ -96,7 +97,7 @@
       "dimension": "380G X 15 PIECES X 1 PACKET",
       "ingredients": [
         {
-          "name": "",
+          "name": "Water",
           "group": "WATER",
           "qty": 7.125,
           "unit": "KG",
@@ -168,7 +169,7 @@
       "dimension": "100G X 50 PIECES X 1 PACKET",
       "ingredients": [
         {
-          "name": "",
+          "name": "Water",
           "group": "WATER",
           "qty": 7.125,
           "unit": "KG",
@@ -240,7 +241,7 @@
       "dimension": "210G X 25 PIECES X 1 PACKET",
       "ingredients": [
         {
-          "name": "",
+          "name": "Water",
           "group": "WATER",
           "qty": 7.125,
           "unit": "KG",
@@ -393,6 +394,15 @@
           "grams_per_unit": 25.0
         },
         {
+          "name": "Babas Meat Curry Powder (1Kg X 10Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 0.9,
+          "unit": "KG",
+          "grams": 900.0,
+          "per_unit": 0.025,
+          "grams_per_unit": 25.0
+        },
+        {
           "name": "Drummet (Wing) (Per Kg)",
           "group": "FOOD",
           "qty": 60.0,
@@ -474,6 +484,15 @@
           "grams_per_unit": 24.19
         },
         {
+          "name": "Knorr Italian Herb Paste (1.5Kg X 6Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 4.5,
+          "unit": "KG",
+          "grams": 4500.0,
+          "per_unit": 0.073,
+          "grams_per_unit": 72.58
+        },
+        {
           "name": "Sbl Free Size (Frozen) (Per Kg)",
           "group": "FOOD",
           "qty": 100.0,
@@ -517,6 +536,15 @@
           "grams": 800.0,
           "per_unit": 0.007,
           "grams_per_unit": 7.27
+        },
+        {
+          "name": "Babas Meat Curry Powder (1Kg X 10Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 0.9,
+          "unit": "KG",
+          "grams": 900.0,
+          "per_unit": 0.008,
+          "grams_per_unit": 8.18
         },
         {
           "name": "Sbl Free Size (Frozen) (Per Kg)",
@@ -607,6 +635,15 @@
           "grams": 25.0,
           "per_unit": 8.333,
           "grams_per_unit": 8.33
+        },
+        {
+          "name": "Heinz Original Bbq Sauce (2.2Kg X 6Btl X 1Ctn)",
+          "group": "FOOD",
+          "qty": 350.0,
+          "unit": "GM",
+          "grams": 350.0,
+          "per_unit": 116.667,
+          "grams_per_unit": 116.67
         }
       ],
       "category": "MEAT"
@@ -681,6 +718,15 @@
       "dimension": "1 KG X 1 PKT",
       "ingredients": [
         {
+          "name": "Lipton Extra Kaw Catering Potbag (12Gm X 10Pcs X 36Pkt X 1Ctn)",
+          "group": "BEVERAGE",
+          "qty": 3.0,
+          "unit": "PCS",
+          "grams": null,
+          "per_unit": 3.0,
+          "grams_per_unit": null
+        },
+        {
           "name": "P1 Sugar (50Kg X Guni)",
           "group": "FOOD",
           "qty": 1.0,
@@ -698,6 +744,15 @@
       "yield_unit": "PKT",
       "dimension": "1 PKT",
       "ingredients": [
+        {
+          "name": "Knorr Cream Of Mushroom Soup (1Kg X 6Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 0.25,
+          "unit": "KG",
+          "grams": 250.0,
+          "per_unit": 0.25,
+          "grams_per_unit": 250.0
+        },
         {
           "name": "Tepung Ubi Kayu 3A (20Kg X Pkt)",
           "group": "FOOD",
@@ -724,7 +779,26 @@
       "yield_qty": 20.0,
       "yield_unit": "PKT",
       "dimension": "500 G X 1 PKT",
-      "ingredients": [],
+      "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 2.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.1,
+          "grams_per_unit": null
+        },
+        {
+          "name": "Swiss Bear Nacho Cheese Sauce 1Kg/12Pkt/Ctn",
+          "group": "FOOD",
+          "qty": 10000.0,
+          "unit": "GM",
+          "grams": 10000.0,
+          "per_unit": 500.0,
+          "grams_per_unit": 500.0
+        }
+      ],
       "category": "SAUCES"
     },
     {
@@ -811,7 +885,8 @@
           "qty": 45.0,
           "unit": "ML",
           "grams": null,
-          "per_unit": 5.625
+          "per_unit": 5.625,
+          "grams_per_unit": null
         }
       ],
       "category": "SAUCES"
@@ -875,6 +950,15 @@
           "grams": 20.0,
           "per_unit": 0.003,
           "grams_per_unit": 3.33
+        },
+        {
+          "name": "Heinz Original Bbq Sauce (2.2Kg X 6Btl X 1Ctn)",
+          "group": "FOOD",
+          "qty": 0.2,
+          "unit": "KG",
+          "grams": 200.0,
+          "per_unit": 0.033,
+          "grams_per_unit": 33.33
         }
       ],
       "category": "SAUCES"
@@ -885,6 +969,15 @@
       "yield_unit": "PKT",
       "dimension": "500G X 1 PKT",
       "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 10.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.1,
+          "grams_per_unit": null
+        },
         {
           "name": "Anchor Salted Butter 25Kg",
           "group": "FOOD",
@@ -967,6 +1060,15 @@
           "grams_per_unit": 1.2
         },
         {
+          "name": "Hosen Mushroom Sliced (2.84Kg X 6Tin X 1Ctn)",
+          "group": "FOOD",
+          "qty": 2.84,
+          "unit": "KG",
+          "grams": 2840.0,
+          "per_unit": 0.028,
+          "grams_per_unit": 28.4
+        },
+        {
           "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
           "group": "FOOD",
           "qty": 1.7,
@@ -1002,6 +1104,15 @@
       "yield_unit": "PKT",
       "dimension": "3 KG X 1 PKT",
       "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 10.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.606,
+          "grams_per_unit": null
+        },
         {
           "name": "Anchor Salted Butter 25Kg",
           "group": "FOOD",
@@ -1084,6 +1195,15 @@
           "grams_per_unit": 7.27
         },
         {
+          "name": "Hosen Mushroom Sliced (2.84Kg X 6Tin X 1Ctn)",
+          "group": "FOOD",
+          "qty": 2.84,
+          "unit": "KG",
+          "grams": 2840.0,
+          "per_unit": 0.172,
+          "grams_per_unit": 172.12
+        },
+        {
           "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
           "group": "FOOD",
           "qty": 1.7,
@@ -1119,6 +1239,15 @@
       "yield_unit": "PKT",
       "dimension": "2 KG X 1 PKT",
       "ingredients": [
+        {
+          "name": "Anchor Extra Yield Cooking Cream (1L X 12Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 10.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.556,
+          "grams_per_unit": null
+        },
         {
           "name": "Flour Diamond (25Kg X 1Guni)",
           "group": "FOOD",
@@ -1156,6 +1285,15 @@
           "grams_per_unit": 8.33
         },
         {
+          "name": "Hosen Mushroom Sliced (2.84Kg X 6Tin X 1Ctn)",
+          "group": "FOOD",
+          "qty": 2.0,
+          "unit": "KG",
+          "grams": 2000.0,
+          "per_unit": 0.111,
+          "grams_per_unit": 111.11
+        },
+        {
           "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
           "group": "FOOD",
           "qty": 1.2,
@@ -1182,6 +1320,15 @@
       "yield_unit": "PKT",
       "dimension": "3 KG X 1 PKT",
       "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 14.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.848,
+          "grams_per_unit": null
+        },
         {
           "name": "17Kg Vesawit Cooking Oil (Pet)",
           "group": "FOOD",
@@ -1291,6 +1438,15 @@
       "dimension": "1 KG X 1 PKT",
       "ingredients": [
         {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 7.5,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.469,
+          "grams_per_unit": null
+        },
+        {
           "name": "17Kg Vesawit Cooking Oil (Pet)",
           "group": "FOOD",
           "qty": 0.225,
@@ -1335,6 +1491,15 @@
       "yield_unit": "PKT",
       "dimension": "1 KG X 1 PKT",
       "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 37.5,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.469,
+          "grams_per_unit": null
+        },
         {
           "name": "17Kg Vesawit Cooking Oil (Pet)",
           "group": "FOOD",
@@ -1381,6 +1546,15 @@
       "dimension": "1 KG X 1 PKT",
       "ingredients": [
         {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 5.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.156,
+          "grams_per_unit": null
+        },
+        {
           "name": "40Kg Australian Fine Salt",
           "group": "FOOD",
           "qty": 0.13,
@@ -1417,6 +1591,15 @@
       "dimension": "500G X 1 PKT",
       "ingredients": [
         {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 2.4,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.08,
+          "grams_per_unit": null
+        },
+        {
           "name": "17Kg Vesawit Cooking Oil (Pet)",
           "group": "FOOD",
           "qty": 0.12,
@@ -1424,6 +1607,15 @@
           "grams": 120.0,
           "per_unit": 0.004,
           "grams_per_unit": 4.0
+        },
+        {
+          "name": "Knorr Italian Herb Paste (1.5Kg X 6Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 0.72,
+          "unit": "KG",
+          "grams": 720.0,
+          "per_unit": 0.024,
+          "grams_per_unit": 24.0
         },
         {
           "name": "Lady'S Choice Mayo Magic (3L X 4Tub X 1Ctn)",
@@ -1443,6 +1635,33 @@
       "yield_unit": "PKT",
       "dimension": "1 KG X 1 PKT",
       "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 15.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.75,
+          "grams_per_unit": null
+        },
+        {
+          "name": "Anchor Extra Yield Cooking Cream (1L X 12Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 3.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.15,
+          "grams_per_unit": null
+        },
+        {
+          "name": "Knorr Sauce Mix Carbonara (Ps) (750Gm X 6Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 3.0,
+          "unit": "KG",
+          "grams": 3000.0,
+          "per_unit": 0.15,
+          "grams_per_unit": 150.0
+        },
         {
           "name": "Tepung Ubi Kayu 3A (20Kg X Pkt)",
           "group": "FOOD",
@@ -1470,6 +1689,33 @@
       "yield_unit": "PKT",
       "dimension": "3 KG X 1 PKT",
       "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 15.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 2.308,
+          "grams_per_unit": null
+        },
+        {
+          "name": "Anchor Extra Yield Cooking Cream (1L X 12Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 3.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.462,
+          "grams_per_unit": null
+        },
+        {
+          "name": "Knorr Sauce Mix Carbonara (Ps) (750Gm X 6Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 3.0,
+          "unit": "KG",
+          "grams": 3000.0,
+          "per_unit": 0.462,
+          "grams_per_unit": 461.54
+        },
         {
           "name": "Tepung Ubi Kayu 3A (20Kg X Pkt)",
           "group": "FOOD",
@@ -1503,7 +1749,8 @@
           "qty": 6.0,
           "unit": "PKT",
           "grams": null,
-          "per_unit": 0.067
+          "per_unit": 0.067,
+          "grams_per_unit": null
         },
         {
           "name": "17Kg Vesawit Cooking Oil (Pet)",
@@ -1560,6 +1807,15 @@
           "grams_per_unit": 2.44
         },
         {
+          "name": "Knorr Golden Salted Egg Powder (800Gm X 6Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 4.8,
+          "unit": "KG",
+          "grams": 4800.0,
+          "per_unit": 0.053,
+          "grams_per_unit": 53.33
+        },
+        {
           "name": "P1 Sugar (50Kg X Guni)",
           "group": "FOOD",
           "qty": 0.3,
@@ -1586,6 +1842,15 @@
       "yield_unit": "PKT",
       "dimension": "300G X 1PKT",
       "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 5.2,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.118,
+          "grams_per_unit": null
+        },
         {
           "name": "Otafuku Teriyaki Sauce (2.4Kg X 6Btl X 1Ctn)",
           "group": "FOOD",
@@ -1614,12 +1879,13 @@
           "grams_per_unit": 2.27
         },
         {
-          "name": "Cksfg0003 My Us Duncan Sauce Sfg",
+          "name": "My Us Duncan Sauce Sfg",
           "group": "FOOD",
           "qty": 3.0,
           "unit": "PKT",
           "grams": null,
-          "per_unit": 0.068
+          "per_unit": 0.068,
+          "grams_per_unit": null
         }
       ],
       "category": "SAUCES"
@@ -1630,6 +1896,15 @@
       "yield_unit": "PKT",
       "dimension": "300G X 1PKT",
       "ingredients": [
+        {
+          "name": "Water",
+          "group": "WATER",
+          "qty": 8.0,
+          "unit": "L",
+          "grams": null,
+          "per_unit": 0.057,
+          "grams_per_unit": null
+        },
         {
           "name": "17Kg Vesawit Cooking Oil (Pet)",
           "group": "FOOD",
@@ -1645,7 +1920,8 @@
           "qty": 20.0,
           "unit": "PCS",
           "grams": null,
-          "per_unit": 0.143
+          "per_unit": 0.143,
+          "grams_per_unit": null
         },
         {
           "name": "Chili Padi Green (Per Kg)",
@@ -1797,7 +2073,8 @@
           "qty": 30.0,
           "unit": "ML",
           "grams": null,
-          "per_unit": 12.0
+          "per_unit": 12.0,
+          "grams_per_unit": null
         },
         {
           "name": "Aji No Moto",
@@ -1818,28 +2095,49 @@
       "dimension": "2 PIECES X 1 PACKET",
       "ingredients": [
         {
-          "name": "Cksfg0001 My Us Italiano Sauce 3Kg",
+          "name": "San Remo No. 100 Large Sheet Lasagna (250Gm X 12Pkt X Ctn)",
+          "group": "FOOD",
+          "qty": 2.2,
+          "unit": "PKT",
+          "grams": null,
+          "per_unit": 0.22,
+          "grams_per_unit": null
+        },
+        {
+          "name": "My Us Italiano Sauce 3Kg",
           "group": "FOOD",
           "qty": 0.333,
           "unit": "PKT",
           "grams": null,
-          "per_unit": 0.033
+          "per_unit": 0.033,
+          "grams_per_unit": null
         },
         {
-          "name": "Cksfg0002 My Us Bolognese Sauce 3Kg",
+          "name": "My Us Bolognese Sauce 3Kg",
           "group": "FOOD",
           "qty": 0.666,
           "unit": "PKT",
           "grams": null,
-          "per_unit": 0.067
+          "per_unit": 0.067,
+          "grams_per_unit": null
         },
         {
-          "name": "Cksfg0004 My Us Concasse Sauce 3Kg",
+          "name": "My Us Concasse Sauce 3Kg",
           "group": "FOOD",
           "qty": 0.333,
           "unit": "PKT",
           "grams": null,
-          "per_unit": 0.033
+          "per_unit": 0.033,
+          "grams_per_unit": null
+        },
+        {
+          "name": "Anchor Mozarella Cheese (2Kg X 6Pkt X 1Ctn)",
+          "group": "FOOD",
+          "qty": 0.5,
+          "unit": "KG",
+          "grams": 500.0,
+          "per_unit": 0.05,
+          "grams_per_unit": 50.0
         },
         {
           "name": "Mixed Herbs Whole (1Kg X Pkt)",
