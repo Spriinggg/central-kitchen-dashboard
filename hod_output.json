@@ -1,0 +1,45 @@
+{
+  "generated_at": "2026-09-21T09:25:51",
+  "records": [
+    {
+      "date": "2026-09-15",
+      "outlet": "B",
+      "produced": 100,
+      "sold": 67,
+      "sell_through_pct": 67.0,
+      "status": "surplus",
+      "severity": "medium",
+      "note": "overproduced \u2192 consider producing less"
+    },
+    {
+      "date": "2026-09-15",
+      "outlet": "C",
+      "produced": 90,
+      "sold": 20,
+      "sell_through_pct": 22.2,
+      "status": "surplus",
+      "severity": "high",
+      "note": "overproduced \u2192 consider producing less"
+    },
+    {
+      "date": "2026-09-15",
+      "outlet": "D",
+      "produced": 70,
+      "sold": 68,
+      "sell_through_pct": 97.1,
+      "status": "shortage risk",
+      "severity": "medium",
+      "note": "nearly sold out \u2192 consider producing more"
+    },
+    {
+      "date": "2026-09-15",
+      "outlet": "E",
+      "produced": 80,
+      "sold": 30,
+      "sell_through_pct": 37.5,
+      "status": "surplus",
+      "severity": "high",
+      "note": "overproduced \u2192 consider producing less"
+    }
+  ]
+}

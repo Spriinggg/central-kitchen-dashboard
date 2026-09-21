@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-09-21T09:25:51",
+  "overall_waste_pct": 8.4,
+  "records": [
+    {
+      "date": "2026-09-15",
+      "size": "Personal (6\")",
+      "expected_kg": 80.0,
+      "good_kg": 58,
+      "wasted_kg": 9,
+      "yield_pct": 72.5,
+      "waste_pct": 13.4,
+      "severity": "high"
+    },
+    {
+      "date": "2026-09-15",
+      "size": "Regular (9\")",
+      "expected_kg": 128.0,
+      "good_kg": 96,
+      "wasted_kg": 2,
+      "yield_pct": 75.0,
+      "waste_pct": 2.0,
+      "severity": "low"
+    },
+    {
+      "date": "2026-09-15",
+      "size": "Large (13\")",
+      "expected_kg": 96.0,
+      "good_kg": 107,
+      "wasted_kg": 13,
+      "yield_pct": 111.5,
+      "waste_pct": 10.8,
+      "severity": "high"
+    }
+  ]
+}

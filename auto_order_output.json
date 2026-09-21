@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-09-21T09:25:52",
+  "buffer_pct": 10,
+  "records": [
+    {
+      "outlet": "B",
+      "weekly_usage": 100,
+      "current_stock": 2,
+      "buffer_pct": 10,
+      "target": 110,
+      "order_qty": 108,
+      "status": "draft \u2014 needs approval"
+    },
+    {
+      "outlet": "C",
+      "weekly_usage": 80,
+      "current_stock": 65,
+      "buffer_pct": 10,
+      "target": 88,
+      "order_qty": 23,
+      "status": "draft \u2014 needs approval"
+    },
+    {
+      "outlet": "D",
+      "weekly_usage": 80,
+      "current_stock": 80,
+      "buffer_pct": 10,
+      "target": 88,
+      "order_qty": 8,
+      "status": "draft \u2014 needs approval"
+    },
+    {
+      "outlet": "E",
+      "weekly_usage": 70,
+      "current_stock": 20,
+      "buffer_pct": 10,
+      "target": 77,
+      "order_qty": 57,
+      "status": "draft \u2014 needs approval"
+    }
+  ]
+}

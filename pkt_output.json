@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-09-21T09:25:53",
+  "mismatches": 4,
+  "records": [
+    {
+      "route": "KL-01",
+      "outlet": "Outlet B",
+      "item": "Dough",
+      "dispatched": 100,
+      "received": 100,
+      "gap": 0,
+      "status": "matched"
+    },
+    {
+      "route": "KL-04",
+      "outlet": "Outlet C",
+      "item": "Cheese",
+      "dispatched": 80,
+      "received": 20,
+      "gap": 60,
+      "status": "mismatch"
+    },
+    {
+      "route": "JHR-02",
+      "outlet": "Outlet D",
+      "item": "Sauce",
+      "dispatched": 95,
+      "received": 98,
+      "gap": -3,
+      "status": "mismatch"
+    },
+    {
+      "route": "KL-07",
+      "outlet": "Outlet E",
+      "item": "Dough",
+      "dispatched": 90,
+      "received": 2,
+      "gap": 88,
+      "status": "mismatch"
+    },
+    {
+      "route": "PNG-03",
+      "outlet": "Outlet F",
+      "item": "Cheese",
+      "dispatched": 67,
+      "received": 32,
+      "gap": 35,
+      "status": "mismatch"
+    }
+  ]
+}
