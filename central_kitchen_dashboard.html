@@ -155,7 +155,7 @@
   <div id="view-dashboard">
   <div class="card" id="uploadPanel" style="margin-bottom:16px;">
     <p class="card-title">⬆️ Upload ERP data</p>
-    <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 12px;">Drop the ERP Excel exports — processed in your browser, nothing is sent to a server. Needed: Stock Movement (Raw Materials) chunks, Stock Balance (opening + closing), Job Production Variance (Output), Wastage Report.</p>
+    <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 12px;">Drop the ERP Excel exports — processed in your browser and saved to Supabase (shared). Add new files anytime — data accumulates, it does not wipe. Needed: Stock Movement (Raw Materials) chunks, Stock Balance (opening + closing), Job Production Variance (Output), Wastage Report.</p>
     <input type="file" id="ckFiles" multiple accept=".xlsx" style="font-size:13px;">
     <button id="ckProcess" class="nav-btn" style="margin-left:8px;cursor:pointer;">Process files</button>
     <div id="ckStatus" style="font-size:12.5px;color:var(--text-soft);margin-top:10px;"></div>
@@ -248,8 +248,8 @@
 <script>
 // ============================================================
 // Central Kitchen — data pipeline (browser + Node compatible)
-// Takes parsed sheets (array-of-arrays) and produces the 4-agent
-// outputs the dashboard renders. No Python needed.
+// parse -> raw intermediate (mergeable) -> build -> agent outputs
+// Accumulate: mergeRaw() lets new uploads ADD to stored data.
 // ============================================================
 (function (root) {
   const MY_STORAGES = ["CK KL RAW MATERIAL", "PKT WAREHOUSE SHAH ALAM"];
@@ -265,85 +265,82 @@
     return "other";
   }
   const numf = (v) => (v == null || v === "") ? 0 : (typeof v === "number" ? v : parseFloat(String(v).replace(/,/g, "")) || 0);
-
-  // ---- classify uploaded sheets by header signature ----
-  function detect(headerRow, title) {
-    const h = (headerRow || []).map(x => String(x || "").trim());
-    const has = (s) => h.some(c => c === s);
+  const r1 = n => Math.round(n * 10) / 10;
+  function numParse(s){ if(s==null)return{n:null,u:null}; if(typeof s==="number")return{n:s,u:null}; const m=/([\d,\.]+)\s*([A-Za-z]+)?/.exec(String(s).trim()); return m?{n:parseFloat(m[1].replace(/,/g,"")),u:m[2]||null}:{n:null,u:null}; }
+  function iso(d){ return d?d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"):null; }
+  function dateOf(title){ const m=/as at (\d{2})\/(\d{2})\/(\d{4})/.exec(title||""); return m?new Date(+m[3],+m[2]-1,+m[1]):null; }
+  function parseDate(s){ if(!s) return null; const p=String(s).split(" ")[0].split("/"); return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null; }
+  function detect(header, title) {
+    const h = (header || []).map(x => String(x || "").trim());
+    const has = (s) => h.indexOf(s) >= 0;
     if (has("Movement Date") && has("Item Name") && has("Category")) return "raw_movement";
-    if (has("Movement Date") && has("Semi FG Code")) return "semifg_movement";
-    if (has("Product Code") && has("Storage Location")) return "fg_movement";
     if (has("Job No.") && has("Expected Yield")) return "job_variance";
     if (has("Item Name") && has("Reason") && has("Cost")) return "wastage";
-    if (typeof title === "string" && title.indexOf("Stock Balance") >= 0) return "balance";
-    if (has("Item Code") && has("Storage Name") && has("Quantity")) return "balance";
-    return "unknown";
+    if ((typeof title === "string" && title.indexOf("Stock Balance") >= 0) || (has("Item Code") && has("Storage Name") && has("Quantity"))) return "balance";
+    return "unknown";  // semifg / fg movement etc. ignored
   }
 
-  // ---- process a batch of files ----
-  // files: [{name, sheets:[{title, rows}]}]  rows = array-of-arrays (row 1 = header, or title then header)
-  function processFiles(files) {
-    const seen = new Set();
-    const mv = [];                 // deduped raw movement rows
-    const openings = {}, closings = {};
-    let openTitle = null, closeTitle = null;
-    let jobRows = null, wasteRows = null;
-
+  // ---- parse uploaded files into a mergeable raw intermediate ----
+  function parseFiles(files) {
+    const raw = { mvKeys:{}, movements: [], openings:{}, closings:{}, openTitle:null, closeTitle:null, jobRows:[], jobKeys:{}, wasteRows:[], wasteKeys:{} };
     files.forEach(f => f.sheets.forEach(sh => {
-      let rows = sh.rows;
-      // balance & wastage & job files carry a title row first
-      let headerIdx = 0;
-      // find header row: the row containing known header cells
+      const rows = sh.rows || [];
+      let hi = 0;
       for (let i = 0; i < Math.min(rows.length, 3); i++) {
-        const rowStr = (rows[i] || []).map(x => String(x || ""));
-        if (rowStr.indexOf("Movement Date") >= 0 || rowStr.indexOf("Item Code") >= 0 ||
-            rowStr.indexOf("Job No.") >= 0 || rowStr.indexOf("Product Code") >= 0 ||
-            rowStr.indexOf("Semi FG Code") >= 0) { headerIdx = i; break; }
+        const rs = (rows[i] || []).map(x => String(x || ""));
+        if (rs.indexOf("Movement Date")>=0 || rs.indexOf("Item Code")>=0 || rs.indexOf("Job No.")>=0) { hi = i; break; }
       }
-      const header = rows[headerIdx] || [];
-      const title = headerIdx > 0 ? String((rows[0] || [])[0] || "") : (sh.title || "");
+      const header = rows[hi] || [];
+      const title = hi > 0 ? String((rows[0]||[])[0]||"") : (sh.title||"");
       const kind = detect(header, title);
-      const body = rows.slice(headerIdx + 1);
-
+      const body = rows.slice(hi + 1);
       if (kind === "raw_movement") {
-        body.forEach(v => {
-          if (!v || typeof v[0] !== "string") return;
-          const key = v.join("\u0001");
-          if (seen.has(key)) return;
-          seen.add(key);
-          mv.push(v);
-        });
+        body.forEach(v => { if (!v || typeof v[0] !== "string") return; const k=v.join("\u0001"); if(raw.mvKeys[k])return; raw.mvKeys[k]=1; raw.movements.push(v); });
       } else if (kind === "balance") {
-        // cols: 0 code,1 desc,2 cat,3 sub,4 branchcode,5 branch,6 storagecode,7 storage,8 qty
-        const isClosing = /Closing Balance as at (\d{2}\/\d{2}\/\d{4})/.exec(title);
-        const dateStr = isClosing ? isClosing[1] : null;
-        // decide opening vs closing by date: earliest = opening, latest = closing
-        const target = {};
-        body.forEach(v => { if (v[0] && v[7] != null) target[v[7] + "\u0001" + v[0]] = numf(v[8]); });
-        if (!openTitle) { Object.assign(openings, target); openTitle = title; }
-        else {
-          // compare dates: put earlier into openings, later into closings
-          const d1 = parseDate(dateOf(openTitle)), d2 = parseDate(dateStr);
-          if (d2 && d1 && d2 < d1) { Object.assign(closings, openings); closeTitle = openTitle; Object.keys(openings).forEach(k=>delete openings[k]); Object.assign(openings, target); openTitle = title; }
-          else { Object.assign(closings, target); closeTitle = title; }
-        }
-      } else if (kind === "job_variance") { jobRows = body; }
-      else if (kind === "wastage") { wasteRows = body; }
-      // semifg/fg movement: not needed for the 4 core agents yet
+        const d = dateOf(title); const t = {};
+        body.forEach(v => { if (v[0] && v[7] != null) t[v[7] + "\u0001" + v[0]] = numf(v[8]); });
+        mergeBalance(raw, t, title, d);
+      } else if (kind === "job_variance") {
+        body.forEach(v => { if(!v||!v[0])return; const k=String(v[0]); if(raw.jobKeys[k])return; raw.jobKeys[k]=1; raw.jobRows.push(v); });
+      } else if (kind === "wastage") {
+        body.forEach(v => { if(!v||!v[0])return; const k=String(v[1]||v.join("\u0001")); if(raw.wasteKeys[k])return; raw.wasteKeys[k]=1; raw.wasteRows.push(v); });
+      }
     }));
-
-    return build(mv, openings, closings, openTitle, closeTitle, jobRows, wasteRows);
+    return raw;
+  }
+  // opening = earliest "as at"; closing = latest "as at"
+  function mergeBalance(raw, table, title, d) {
+    if (!Object.keys(table).length) return;
+    const setOpen = () => { raw.openings = table; raw.openTitle = title; raw._openD = d; };
+    const setClose = () => { raw.closings = table; raw.closeTitle = title; raw._closeD = d; };
+    if (!raw.openTitle) { setOpen(); return; }
+    if (d && raw._openD && d < raw._openD) { // new is earlier -> becomes opening, old opening -> closing if none/later
+      if (!raw.closeTitle || (raw._openD > raw._closeD)) { raw.closings = raw.openings; raw.closeTitle = raw.openTitle; raw._closeD = raw._openD; }
+      setOpen();
+    } else { // new is later or equal -> closing (keep latest)
+      if (!raw.closeTitle || (d && raw._closeD && d > raw._closeD) || !raw._closeD) setClose();
+    }
   }
 
-  function dateOf(title){ const m=/as at (\d{2}\/\d{2}\/\d{4})/.exec(title||""); return m?m[1]:null; }
-  function parseDate(s){ if(!s) return null; const p=s.split("/"); return new Date(+p[2],+p[1]-1,+p[0]); }
+  // ---- merge two raw intermediates (accumulate) ----
+  function mergeRaw(a, b) {
+    if (!a) return b; if (!b) return a;
+    const out = { mvKeys:{}, movements: [], openings:{}, closings:{}, openTitle:null, closeTitle:null, jobRows:[], jobKeys:{}, wasteRows:[], wasteKeys:{} };
+    [a,b].forEach(src => {
+      (src.movements||[]).forEach(v=>{ const k=v.join("\u0001"); if(out.mvKeys[k])return; out.mvKeys[k]=1; out.movements.push(v); });
+      (src.jobRows||[]).forEach(v=>{ const k=String(v[0]); if(out.jobKeys[k])return; out.jobKeys[k]=1; out.jobRows.push(v); });
+      (src.wasteRows||[]).forEach(v=>{ const k=String(v[1]||v.join("\u0001")); if(out.wasteKeys[k])return; out.wasteKeys[k]=1; out.wasteRows.push(v); });
+    });
+    // balances: earliest opening, latest closing (dates recomputed from titles — JSON-safe)
+    [ [a.openTitle,a.openings], [b.openTitle,b.openings] ].forEach(([t,tbl])=>{ if(t && tbl && Object.keys(tbl).length) mergeBalance(out, tbl, t, dateOf(t)); });
+    [ [a.closeTitle,a.closings], [b.closeTitle,b.closings] ].forEach(([t,tbl])=>{ if(t && tbl && Object.keys(tbl).length) mergeBalance(out, tbl, t, dateOf(t)); });
+    return out;
+  }
 
-  function build(mv, openings, closings, openTitle, closeTitle, jobRows, wasteRows) {
-    // ---- aggregate movements per storage+code ----
-    const agg = {};
-    const types = {};
-    let dmin=null,dmax=null;
-    mv.forEach(v => {
+  // ---- build agent-ready result from raw ----
+  function build(raw) {
+    const agg = {}, types = {}; let dmin=null,dmax=null;
+    (raw.movements||[]).forEach(v => {
       const storage=v[4], code=v[1], name=v[2];
       if (MY_STORAGES.indexOf(storage)<0 || !code) return;
       const dm=/(\d{2})\/(\d{2})\/(\d{4})/.exec(v[0]||"");
@@ -352,107 +349,64 @@
       const qi=numf(v[9]), qo=numf(v[11]);
       const k=storage+"\u0001"+code;
       const a=agg[k]||(agg[k]={storage,code,name,cat:v[3],uom:v[12]||v[10]||"",received:0,production:0,dispatch:0,adj_in:0,adj_out:0,other_in:0,other_out:0});
-      if(t==="received")a.received+=qi;
-      else if(t==="production")a.production+=qo;
-      else if(t==="dispatch")a.dispatch+=qo;
-      else if(t==="adjustment"){a.adj_in+=qi;a.adj_out+=qo;}
-      else {a.other_in+=qi;a.other_out+=qo;}
+      if(t==="received")a.received+=qi; else if(t==="production")a.production+=qo; else if(t==="dispatch")a.dispatch+=qo;
+      else if(t==="adjustment"){a.adj_in+=qi;a.adj_out+=qo;} else {a.other_in+=qi;a.other_out+=qo;}
     });
-    const items=Object.values(agg).map(a=>{
-      const op=openings[a.storage+"\u0001"+a.code];
-      const totIn=a.received+a.adj_in+a.other_in, totOut=a.production+a.dispatch+a.adj_out+a.other_out;
-      const closing=Math.round(((op||0)+totIn-totOut)*10)/10;
-      const actual=closings[a.storage+"\u0001"+a.code];
-      return {storage:a.storage,code:a.code,name:a.name,category:a.cat,uom:a.uom,
-        opening:op==null?null:op,received:r1(a.received),production_used:r1(a.production),
-        dispatched:r1(a.dispatch),computed_closing:closing,actual_closing:actual==null?null:actual};
+    const items=Object.keys(agg).map(k=>{ const a=agg[k];
+      const op=raw.openings[a.storage+"\u0001"+a.code];
+      const closing=Math.round(((op||0)+a.received+a.adj_in+a.other_in-a.production-a.dispatch-a.adj_out-a.other_out)*10)/10;
+      const actual=raw.closings[a.storage+"\u0001"+a.code];
+      return {storage:a.storage,code:a.code,name:a.name,category:a.cat,uom:a.uom,opening:op==null?null:op,
+        received:r1(a.received),production_used:r1(a.production),dispatched:r1(a.dispatch),
+        computed_closing:closing,actual_closing:actual==null?null:actual};
     });
     let matched=0,checked=0;
     items.forEach(i=>{if(i.actual_closing!=null){checked++;if(Math.abs(i.actual_closing-i.computed_closing)<=Math.max(1,Math.abs(i.actual_closing)*0.01))matched++;}});
 
-    // ---- production variance (Agent 1 + input) ----
-    const prod={};
-    let jobs=0;
-    (jobRows||[]).forEach(v=>{
-      if(!v[0])return; jobs++;
-      const name=String(v[7]||"").trim();
-      const exp=numParse(v[9]), act=numParse(v[10]);
-      if(exp.n==null)return;
+    const prod={}; let jobs=0;
+    (raw.jobRows||[]).forEach(v=>{ if(!v[0])return; jobs++;
+      const name=String(v[7]||"").trim(); const exp=numParse(v[9]), act=numParse(v[10]); if(exp.n==null)return;
       const p=prod[name]||(prod[name]={product:name,jobs:0,expected:0,actual:0,uom:exp.u,defect:0});
-      p.jobs++;p.expected+=exp.n;p.actual+=(act.n||0);
-      if(String(v[4]).indexOf("Defect")>=0)p.defect++;
+      p.jobs++;p.expected+=exp.n;p.actual+=(act.n||0); if(String(v[4]).indexOf("Defect")>=0)p.defect++;
     });
-    const products=Object.values(prod).map(p=>({product:p.product,jobs:p.jobs,expected:r1(p.expected),actual:r1(p.actual),uom:p.uom,variance_pct:p.expected?r1((p.actual-p.expected)/p.expected*100):0,defect_jobs:p.defect}));
+    const products=Object.keys(prod).map(n=>{const p=prod[n];return{product:p.product,jobs:p.jobs,expected:r1(p.expected),actual:r1(p.actual),uom:p.uom,variance_pct:p.expected?r1((p.actual-p.expected)/p.expected*100):0,defect_jobs:p.defect};});
 
-    // ---- wastage (Agent 2) ----
-    const waste=(wasteRows||[]).filter(v=>v[0]).map(v=>({date:v[2],item:v[14],qty:v[15],uom:v[16],reason:(v[19]||v[18]||""),cost:v[20]}));
+    const waste=(raw.wasteRows||[]).filter(v=>v[0]).map(v=>({date:v[2],item:v[14],qty:v[15],uom:v[16],reason:(v[19]||v[18]||""),cost:v[20]}));
     const wasteCost=Math.round(waste.reduce((s,w)=>s+numf(w.cost),0)*100)/100;
 
-    // ---- weekly trend (from job output + wastage, by ISO week) ----
     const wk={};
-    (jobRows||[]).forEach(v=>{
-      if(!v[1])return;
-      const dm=/(\d{2})\/(\d{2})\/(\d{4})/.exec(String(v[1]));
-      if(!dm)return;
-      const d=new Date(+dm[3],+dm[2]-1,+dm[1]); const key=weekKey(d);
-      const act=numParse(v[10]).n||0, exp=numParse(v[9]).n||0;
-      const w=wk[key]||(wk[key]={produced:0,expected:0});
-      w.produced+=act; w.expected+=exp;
-    });
-    waste.forEach(x=>{
-      const d=x.date instanceof Date?x.date:parseDate(String(x.date));
-      if(!d)return; const key=weekKey(d);
-      const w=wk[key]||(wk[key]={produced:0,expected:0}); w.wasteCost=(w.wasteCost||0)+numf(x.cost);
-    });
-    const weekKeys=Object.keys(wk).sort();
-    const weekly={days:weekKeys.map(k=>k.slice(5)),
-      produced:weekKeys.map(k=>Math.round(wk[k].produced)),
-      sold:weekKeys.map(k=>Math.round(wk[k].expected)),
-      waste:weekKeys.map(k=>Math.round((wk[k].wasteCost||0)*100)/100),
-      variance:weekKeys.map(k=>wk[k].expected?Math.round((wk[k].produced-wk[k].expected)/wk[k].expected*1000)/10:0)};
+    (raw.jobRows||[]).forEach(v=>{ if(!v[1])return; const d=parseDate(v[1]); if(!d)return; const key=weekKey(d);
+      const act=numParse(v[10]).n||0, exp=numParse(v[9]).n||0; const w=wk[key]||(wk[key]={produced:0,expected:0}); w.produced+=act; w.expected+=exp; });
+    waste.forEach(x=>{ const d=x.date instanceof Date?x.date:parseDate(x.date); if(!d)return; const key=weekKey(d); const w=wk[key]||(wk[key]={produced:0,expected:0}); w.wasteCost=(w.wasteCost||0)+numf(x.cost); });
+    const wkKeys=Object.keys(wk).sort();
+    const weekly={days:wkKeys.map(k=>k.slice(5)),produced:wkKeys.map(k=>Math.round(wk[k].produced)),sold:wkKeys.map(k=>Math.round(wk[k].expected)),
+      waste:wkKeys.map(k=>Math.round((wk[k].wasteCost||0)*100)/100),variance:wkKeys.map(k=>wk[k].expected?Math.round((wk[k].produced-wk[k].expected)/wk[k].expected*1000)/10:0)};
 
-    return {
-      meta:{date_from:iso(dmin),date_to:iso(dmax),unique_rows:mv.length,item_count:items.length,
+    return { meta:{date_from:iso(dmin),date_to:iso(dmax),unique_rows:(raw.movements||[]).length,item_count:items.length,
         movement_types:types,validation_matched:matched,validation_total:checked,
-        validation_match_pct:checked?Math.round(matched/checked*1000)/10:null,
-        opening_source:openTitle,closing_source:closeTitle},
-      items, production:{jobs,products}, wastage:{records:waste,total_cost:wasteCost}, weekly
-    };
+        validation_match_pct:checked?Math.round(matched/checked*1000)/10:null,opening_source:raw.openTitle,closing_source:raw.closeTitle},
+      items, production:{jobs,products}, wastage:{records:waste,total_cost:wasteCost}, weekly };
   }
   function weekKey(d){ const t=new Date(d); const day=(t.getDay()+6)%7; t.setDate(t.getDate()-day); return iso(t); }
 
-  const r1=n=>Math.round(n*10)/10;
-  function numParse(s){ if(s==null)return{n:null,u:null}; if(typeof s==="number")return{n:s,u:null}; const m=/([\d,\.]+)\s*([A-Za-z]+)?/.exec(String(s).trim()); return m?{n:parseFloat(m[1].replace(/,/g,"")),u:m[2]||null}:{n:null,u:null}; }
-  function iso(d){ return d?d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"):null; }
+  function processFiles(files){ return build(parseFiles(files)); }
 
-  // ---- map neutral output -> dashboard's 4-agent live vars ----
   function mapAgents(out) {
     const shortName = n => n.replace(/^MY US /i, "").replace(/\s+\d.*$/, "").trim();
-    // Agent 1 — Dough Tracker (yield & waste): dough products
     const dough = out.production.products.filter(p => /DOUGH/i.test(p.product) && !/PREMIX/i.test(p.product));
-    const liveYield = dough.map(p => ({
-      size: shortName(p.product),
-      yield_pct: p.expected ? Math.round(p.actual / p.expected * 1000) / 10 : 0,
-      waste_pct: Math.max(0, Math.round(-p.variance_pct * 10) / 10),
-    }));
-    // Agent 2 — CK GRN (usage variance / cause): wastage records
-    const liveAlerts = out.wastage.records.map(w => {
-      const cost = Number(w.cost) || 0;
-      const sev = cost >= 100 ? "high" : cost >= 30 ? "medium" : "low";
-      return { material: w.item, cause: "spoilage / wastage",
-        note: `${w.qty} ${(w.uom||"").toLowerCase()} · RM${cost} · ${w.reason||""}`,
-        route_to: "Production / Training", severity: sev };
-    });
-    // Agent 3 — HOD (production output planned vs actual): all products
-    const liveProd = out.production.products
-      .sort((a,b)=>b.actual-a.actual)
+    const liveYield = dough.map(p => ({ size: shortName(p.product),
+      yield_pct: p.expected ? Math.round(p.actual/p.expected*1000)/10 : 0,
+      waste_pct: Math.max(0, Math.round(-p.variance_pct*10)/10) }));
+    const liveAlerts = out.wastage.records.map(w => { const cost=Number(w.cost)||0;
+      return { material:w.item, cause:"spoilage / wastage",
+        note:`${w.qty} ${(w.uom||"").toLowerCase()} · RM${cost} · ${w.reason||""}`,
+        route_to:"Production / Training", severity: cost>=100?"high":cost>=30?"medium":"low" }; });
+    const liveProd = out.production.products.slice().sort((a,b)=>b.actual-a.actual)
       .map(p => ({ outlet: shortName(p.product), produced: Math.round(p.expected), sold: Math.round(p.actual) }));
-    // Agent 4 — PKT: pending (data not available)
-    return { liveYield, liveAlerts, liveProd, weekly: out.weekly, pktPending: true,
-             meta: out.meta, items: out.items };
+    return { liveYield, liveAlerts, liveProd, weekly: out.weekly, pktPending: true, meta: out.meta, items: out.items };
   }
 
-  root.CKPipeline = { processFiles, classify, mapAgents };
+  root.CKPipeline = { parseFiles, mergeRaw, build, processFiles, mapAgents, classify };
 })(typeof module !== "undefined" ? module.exports : (window.CK = window.CK || {}));
 
 </script>
@@ -3113,8 +3067,11 @@ const SB_URL="https://dfhuoyffwpxlhnewlykt.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmaHVveWZmd3B4bGhuZXdseWt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5Njc0NDQsImV4cCI6MjEwNTU0MzQ0NH0.BtAutfSoY2TZ_IkGXdhZ8TqovegS8UDh8C-cLgcKWKI";
 let SB=null;
 try{ if(window.supabase) SB=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ console.warn("supabase init failed",e); }
-
-// apply a processed dataset (from upload OR from Supabase) to the dashboard
+let RAW=null;
+function slimRaw(raw){
+  const mv=(raw.movements||[]).map(v=>{ const c=v.slice(0,15); c[5]=null;c[6]=null;c[7]=null;c[8]=null;c[13]=null; return c; });
+  return { movements:mv, openings:raw.openings, closings:raw.closings, openTitle:raw.openTitle, closeTitle:raw.closeTitle, jobRows:raw.jobRows, wasteRows:raw.wasteRows };
+}
 function applyData(out){
   const A=window.CK.CKPipeline.mapAgents(out);
   liveYield=A.liveYield; liveAlerts=A.liveAlerts; liveProd=A.liveProd; liveLog=null;
@@ -3122,57 +3079,53 @@ function applyData(out){
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
   render(); drawTrend(trendMetric); animateMetrics();
   const m=out.meta||{};
-  const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML='\u25cf live \u00b7 weekly from job production';
-  const lu=document.getElementById("lastUpdated"); if(lu) lu.textContent="Live \u00b7 "+(m.date_from||"")+" \u2192 "+(m.date_to||"");
-  const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia \u00b7 live from ERP exports";
+  const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
+  const lu=document.getElementById("lastUpdated"); if(lu) lu.textContent="Live · "+(m.date_from||"")+" → "+(m.date_to||"");
+  const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia · live from ERP exports";
   return m;
 }
-
-// ---- UPLOAD & IN-BROWSER PROCESSING (no Python needed) ----
 async function ckReadFile(file){
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, {type:"array"});
+  const buf=await file.arrayBuffer(); const wb=XLSX.read(buf,{type:"array"});
   return { name:file.name, sheets: wb.SheetNames.map(sn=>({title:sn, rows:XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null})})) };
 }
 async function ckProcessUploaded(list){
   const status=document.getElementById("ckStatus");
   list=Array.from(list||[]);
   if(!list.length){ status.textContent="Please choose the ERP Excel files first."; return; }
-  status.textContent="Reading "+list.length+" file(s)\u2026";
+  status.textContent="Reading "+list.length+" file(s)…";
   try{
     const files=[]; for(const f of list){ files.push(await ckReadFile(f)); }
-    const out=window.CK.CKPipeline.processFiles(files);
+    const newRaw=window.CK.CKPipeline.parseFiles(files);
+    RAW = RAW ? window.CK.CKPipeline.mergeRaw(RAW, newRaw) : newRaw;
+    const out=window.CK.CKPipeline.build(RAW);
     const m=applyData(out);
-    let msg='\u2713 Processed '+(m.unique_rows||0).toLocaleString()+' movements \u00b7 '+m.item_count+' items \u00b7 '+m.date_from+' \u2192 '+m.date_to+' \u00b7 verified '+m.validation_match_pct+'% vs closing';
+    let msg="✓ Data now: "+(m.unique_rows||0).toLocaleString()+" movements · "+m.item_count+" items · "+m.date_from+" → "+m.date_to+" · verified "+m.validation_match_pct+" percent";
     status.innerHTML='<span style="color:var(--green)">'+msg+'</span>';
     if(SB){
-      status.innerHTML='<span style="color:var(--green)">'+msg+'</span> \u00b7 saving to Supabase\u2026';
-      const {error}=await SB.from("ck_state").upsert({id:"latest",payload:out,updated_at:new Date().toISOString()});
-      status.innerHTML='<span style="color:var(--green)">'+msg+(error?('</span> <span style="color:var(--red)">\u00b7 save failed: '+error.message+'</span>'):' \u00b7 saved to Supabase (shared for everyone) \u2713</span>');
-    } else {
-      status.innerHTML+=' <span style="color:var(--amber)">\u00b7 (Supabase not connected \u2014 shown here only)</span>';
-    }
+      status.innerHTML='<span style="color:var(--green)">'+msg+'</span> · saving…';
+      const {error}=await SB.from("ck_state").upsert({id:"latest",payload:slimRaw(RAW),updated_at:new Date().toISOString()});
+      status.innerHTML='<span style="color:var(--green)">'+msg+(error?('</span> <span style="color:var(--red)">· save failed: '+error.message+'</span>'):' · saved & shared ✓</span>');
+    } else { status.innerHTML+=' <span style="color:var(--amber)">· (Supabase not connected)</span>'; }
   }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'; console.error(err); }
 }
-document.getElementById("ckProcess").addEventListener("click",()=>ckProcessUploaded(document.getElementById("ckFiles").files));
-document.getElementById("ckFiles").addEventListener("change",e=>{ if(e.target.files.length) ckProcessUploaded(e.target.files); });
-
-// ---- LOAD SHARED DATA FROM SUPABASE ON OPEN ----
+document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
+document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
 async function loadFromSupabase(){
   if(!SB) return false;
   try{
     const {data,error}=await SB.from("ck_state").select("payload").eq("id","latest").maybeSingle();
     if(error) throw error;
-    if(data && data.payload){ applyData(data.payload);
-      const s=document.getElementById("ckStatus"); if(s) s.innerHTML='<span style="color:var(--green)">\u2713 Loaded latest data from Supabase (shared)</span>';
-      return true; }
+    if(data && data.payload && data.payload.movements){
+      RAW=data.payload;
+      const out=window.CK.CKPipeline.build(RAW);
+      applyData(out);
+      const s=document.getElementById("ckStatus"); if(s) s.innerHTML='<span style="color:var(--green)">✓ Loaded shared data · '+out.meta.date_from+' → '+out.meta.date_to+'. Upload more files to add to it.</span>';
+      return true;
+    }
   }catch(e){ console.warn("supabase load failed",e); }
   return false;
 }
-(async()=>{
-  const ok=await loadFromSupabase();
-  if(!ok){ loadLive(); drawTrend(trendMetric); }
-})();
+(async function(){ const ok=await loadFromSupabase(); if(!ok){ loadLive(); drawTrend(trendMetric); } })();
 </script>
 </body>
 </html>
