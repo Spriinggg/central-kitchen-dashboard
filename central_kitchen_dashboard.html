@@ -181,20 +181,19 @@
   <!-- Controls -->
   <div class="controls">
     <div class="ctrl-group">
-      <span class="ctrl-label">Snapshot</span>
-      <div class="toggle" id="snapToggle">
-        <button data-snap="am" class="active">9:00 AM opening</button>
-        <button data-snap="pm">10:30 PM closing</button>
+      <span class="ctrl-label">Period</span>
+      <div class="toggle" id="periodToggle">
+        <button data-period="week">This week</button>
+        <button data-period="month" class="active">This month</button>
+        <button data-period="all">All</button>
       </div>
     </div>
     <div class="ctrl-group">
-      <span class="ctrl-label">Outlet</span>
-      <select id="outletSelect">
-        <option value="all">All outlets</option>
-        <option value="B">Outlet B</option>
-        <option value="C">Outlet C</option>
-        <option value="D">Outlet D</option>
-      </select>
+      <span class="ctrl-label">Custom range</span>
+      <input id="dFrom" type="date" style="font-size:12px;padding:6px 9px;border-radius:8px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.6);outline:none;">
+      <span style="color:var(--text-mut);font-size:12px;">→</span>
+      <input id="dTo" type="date" style="font-size:12px;padding:6px 9px;border-radius:8px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.6);outline:none;">
+      <button id="dApply" class="nav-btn" style="cursor:pointer;font-size:12px;padding:5px 12px;">Apply</button>
     </div>
     <div class="ctrl-group">
       <span class="ctrl-label">Severity</span>
@@ -206,6 +205,7 @@
       </div>
     </div>
   </div>
+  <div id="periodLabel" style="font-size:12px;color:var(--text-soft);margin:-6px 0 14px;"></div>
 
   <div class="metrics" id="metrics"></div>
 
@@ -352,12 +352,16 @@
     return out;
   }
 
-  // ---- build agent-ready result from raw ----
-  function build(raw) {
+  function rowDate(v0){ const dm=/(\d{2})\/(\d{2})\/(\d{4})/.exec(String(v0||"")); return dm?new Date(+dm[3],+dm[2]-1,+dm[1]):null; }
+  function inRange(d, range){ if(!range) return true; if(!d) return true; return (!range.from||d>=range.from)&&(!range.to||d<=range.to); }
+
+  // ---- build agent-ready result from raw (optional date range: {from:Date,to:Date}) ----
+  function build(raw, range) {
     const agg = {}, types = {}; let dmin=null,dmax=null;
     (raw.movements||[]).forEach(v => {
       const storage=v[4], code=v[1], name=v[2];
       if (MY_STORAGES.indexOf(storage)<0 || !code) return;
+      const d0=rowDate(v[0]); if(!inRange(d0,range)) return;
       const dm=/(\d{2})\/(\d{2})\/(\d{4})/.exec(v[0]||"");
       if(dm){const d=new Date(+dm[3],+dm[2]-1,+dm[1]); if(!dmin||d<dmin)dmin=d; if(!dmax||d>dmax)dmax=d;}
       const t=classify(v[14]); types[t]=(types[t]||0)+1;
@@ -379,18 +383,18 @@
     items.forEach(i=>{if(i.actual_closing!=null){checked++;if(Math.abs(i.actual_closing-i.computed_closing)<=Math.max(1,Math.abs(i.actual_closing)*0.01))matched++;}});
 
     const prod={}; let jobs=0;
-    (raw.jobRows||[]).forEach(v=>{ if(!v[0])return; jobs++;
+    (raw.jobRows||[]).forEach(v=>{ if(!v[0])return; if(!inRange(parseDate(v[1]),range))return; jobs++;
       const name=String(v[7]||"").trim(); const exp=numParse(v[9]), act=numParse(v[10]); if(exp.n==null)return;
       const p=prod[name]||(prod[name]={product:name,jobs:0,expected:0,actual:0,uom:exp.u,defect:0});
       p.jobs++;p.expected+=exp.n;p.actual+=(act.n||0); if(String(v[4]).indexOf("Defect")>=0)p.defect++;
     });
     const products=Object.keys(prod).map(n=>{const p=prod[n];return{product:p.product,jobs:p.jobs,expected:r1(p.expected),actual:r1(p.actual),uom:p.uom,variance_pct:p.expected?r1((p.actual-p.expected)/p.expected*100):0,defect_jobs:p.defect};});
 
-    const waste=(raw.wasteRows||[]).filter(v=>v[0]).map(v=>({date:v[2],item:v[14],qty:v[15],uom:v[16],reason:(v[19]||v[18]||""),cost:v[20]}));
+    const waste=(raw.wasteRows||[]).filter(v=>v[0]&&inRange(parseDate(v[2]),range)).map(v=>({date:v[2],item:v[14],qty:v[15],uom:v[16],reason:(v[19]||v[18]||""),cost:v[20]}));
     const wasteCost=Math.round(waste.reduce((s,w)=>s+numf(w.cost),0)*100)/100;
 
     const wk={};
-    (raw.jobRows||[]).forEach(v=>{ if(!v[1])return; const d=parseDate(v[1]); if(!d)return; const key=weekKey(d);
+    (raw.jobRows||[]).forEach(v=>{ if(!v[1])return; const d=parseDate(v[1]); if(!d||!inRange(d,range))return; const key=weekKey(d);
       const act=numParse(v[10]).n||0, exp=numParse(v[9]).n||0; const w=wk[key]||(wk[key]={produced:0,expected:0}); w.produced+=act; w.expected+=exp; });
     waste.forEach(x=>{ const d=x.date instanceof Date?x.date:parseDate(x.date); if(!d)return; const key=weekKey(d); const w=wk[key]||(wk[key]={produced:0,expected:0}); w.wasteCost=(w.wasteCost||0)+numf(x.cost); });
     const wkKeys=Object.keys(wk).sort();
@@ -404,7 +408,7 @@
   }
   function weekKey(d){ const t=new Date(d); const day=(t.getDay()+6)%7; t.setDate(t.getDate()-day); return iso(t); }
 
-  function processFiles(files){ return build(parseFiles(files)); }
+  function processFiles(files, range){ return build(parseFiles(files), range); }
 
   function mapAgents(out) {
     const shortName = n => n.replace(/^MY US /i, "").replace(/\s+\d.*$/, "").trim();
@@ -2993,16 +2997,6 @@ function render() {
 }
 
 // ---- EVENTS ----
-document.getElementById("snapToggle").addEventListener("click", e => {
-  if (e.target.dataset.snap) {
-    state.snap = e.target.dataset.snap;
-    document.querySelectorAll("#snapToggle button").forEach(b => b.classList.toggle("active", b===e.target));
-    render();
-  }
-});
-document.getElementById("outletSelect").addEventListener("change", e => {
-  state.outlet = e.target.value; render();
-});
 document.getElementById("sevChips").addEventListener("click", e => {
   if (e.target.dataset.sev) {
     state.sev = e.target.dataset.sev;
@@ -3109,6 +3103,17 @@ function applyData(out){
   const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia · live from ERP exports";
   return m;
 }
+// ---- PERIOD / DATE-RANGE ----
+let CURRENT_RANGE=null, FULL_MAX=null;
+function fmtD(d){ try{ return d? (d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")):""; }catch(e){ return ""; } }
+function monthRange(d){ return {from:new Date(d.getFullYear(),d.getMonth(),1), to:d}; }
+function weekRange(d){ const to=new Date(d), from=new Date(d); from.setDate(from.getDate()-6); return {from,to}; }
+function setActivePeriod(p){ document.querySelectorAll("#periodToggle button").forEach(b=>b.classList.toggle("active", b.dataset.period===p)); }
+function syncDateInputs(){ const f=document.getElementById("dFrom"), t=document.getElementById("dTo"); if(f&&CURRENT_RANGE) f.value=fmtD(CURRENT_RANGE.from); if(t&&CURRENT_RANGE) t.value=fmtD(CURRENT_RANGE.to); }
+function updatePeriodLabel(){ const el=document.getElementById("periodLabel"); if(!el) return; el.textContent = CURRENT_RANGE ? ("Showing "+fmtD(CURRENT_RANGE.from)+"  →  "+fmtD(CURRENT_RANGE.to)) : "Showing all data"; }
+function setDefaultRange(){ const full=window.CK.CKPipeline.build(RAW); FULL_MAX = full.meta.date_to ? new Date(full.meta.date_to+"T00:00:00") : new Date(); CURRENT_RANGE = monthRange(FULL_MAX); setActivePeriod("month"); syncDateInputs(); }
+function rebuild(){ if(!RAW) return null; const out=window.CK.CKPipeline.build(RAW, CURRENT_RANGE); applyData(out); updatePeriodLabel(); return out; }
+
 async function ckReadFile(file){
   const buf=await file.arrayBuffer(); const wb=XLSX.read(buf,{type:"array"});
   return { name:file.name, sheets: wb.SheetNames.map(sn=>({title:sn, rows:XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null})})) };
@@ -3122,8 +3127,8 @@ async function ckProcessUploaded(list){
     const files=[]; for(const f of list){ files.push(await ckReadFile(f)); }
     const newRaw=window.CK.CKPipeline.parseFiles(files);
     RAW = RAW ? window.CK.CKPipeline.mergeRaw(RAW, newRaw) : newRaw;
-    const out=window.CK.CKPipeline.build(RAW);
-    const m=applyData(out);
+    setDefaultRange(); rebuild();
+    const m=window.CK.CKPipeline.build(RAW).meta;
     let msg="✓ Data now: "+(m.unique_rows||0).toLocaleString()+" movements · "+m.item_count+" items · "+m.date_from+" → "+m.date_to+" · verified "+m.validation_match_pct+" percent";
     status.innerHTML='<span style="color:var(--green)">'+msg+'</span>';
     if(SB){
@@ -3135,6 +3140,20 @@ async function ckProcessUploaded(list){
 }
 document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
 document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
+document.getElementById("periodToggle").addEventListener("click",function(e){
+  const p=e.target.dataset.period; if(!p||!RAW) return;
+  setActivePeriod(p);
+  if(p==="all") CURRENT_RANGE=null;
+  else if(p==="week") CURRENT_RANGE=weekRange(FULL_MAX||new Date());
+  else CURRENT_RANGE=monthRange(FULL_MAX||new Date());
+  syncDateInputs(); rebuild();
+});
+document.getElementById("dApply").addEventListener("click",function(){
+  const f=document.getElementById("dFrom").value, t=document.getElementById("dTo").value;
+  if(!f||!t||!RAW) return;
+  CURRENT_RANGE={from:new Date(f+"T00:00:00"), to:new Date(t+"T23:59:59")};
+  setActivePeriod(""); rebuild();
+});
 async function loadFromSupabase(){
   if(!SB) return false;
   try{
@@ -3142,9 +3161,9 @@ async function loadFromSupabase(){
     if(error) throw error;
     if(data && data.payload && data.payload.movements){
       RAW=data.payload;
-      const out=window.CK.CKPipeline.build(RAW);
-      applyData(out);
-      const s=document.getElementById("ckStatus"); if(s) s.innerHTML='<span style="color:var(--green)">✓ Loaded shared data · '+out.meta.date_from+' → '+out.meta.date_to+'. Upload more files to add to it.</span>';
+      setDefaultRange(); rebuild();
+      const full=window.CK.CKPipeline.build(RAW).meta;
+      const s=document.getElementById("ckStatus"); if(s) s.innerHTML='<span style="color:var(--green)">✓ Loaded shared data · '+full.date_from+' → '+full.date_to+'. Upload more files to add to it.</span>';
       return true;
     }
   }catch(e){ console.warn("supabase load failed",e); }
