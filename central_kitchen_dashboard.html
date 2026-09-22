@@ -244,6 +244,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ============================================================
 // Central Kitchen — data pipeline (browser + Node compatible)
@@ -3107,6 +3108,26 @@ function drawRecipes() {
 
 document.getElementById("rsearch").addEventListener("input", e => { rQuery = e.target.value; drawRecipes(); });
 
+// ---- SUPABASE (shared persistence) ----
+const SB_URL="https://dfhuoyffwpxlhnewlykt.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmaHVveWZmd3B4bGhuZXdseWt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5Njc0NDQsImV4cCI6MjEwNTU0MzQ0NH0.BtAutfSoY2TZ_IkGXdhZ8TqovegS8UDh8C-cLgcKWKI";
+let SB=null;
+try{ if(window.supabase) SB=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ console.warn("supabase init failed",e); }
+
+// apply a processed dataset (from upload OR from Supabase) to the dashboard
+function applyData(out){
+  const A=window.CK.CKPipeline.mapAgents(out);
+  liveYield=A.liveYield; liveAlerts=A.liveAlerts; liveProd=A.liveProd; liveLog=null;
+  window.__pktPending=true;
+  if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
+  render(); drawTrend(trendMetric); animateMetrics();
+  const m=out.meta||{};
+  const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML='\u25cf live \u00b7 weekly from job production';
+  const lu=document.getElementById("lastUpdated"); if(lu) lu.textContent="Live \u00b7 "+(m.date_from||"")+" \u2192 "+(m.date_to||"");
+  const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia \u00b7 live from ERP exports";
+  return m;
+}
+
 // ---- UPLOAD & IN-BROWSER PROCESSING (no Python needed) ----
 async function ckReadFile(file){
   const buf = await file.arrayBuffer();
@@ -3121,23 +3142,37 @@ async function ckProcessUploaded(list){
   try{
     const files=[]; for(const f of list){ files.push(await ckReadFile(f)); }
     const out=window.CK.CKPipeline.processFiles(files);
-    const A=window.CK.CKPipeline.mapAgents(out);
-    liveYield=A.liveYield; liveAlerts=A.liveAlerts; liveProd=A.liveProd; liveLog=null;
-    window.__pktPending=true;
-    if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
-    render(); drawTrend(trendMetric); animateMetrics();
-    const m=out.meta;
-    const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML='\u25cf live \u00b7 weekly from job production';
-    status.innerHTML='<span style="color:var(--green)">\u2713 Processed '+m.unique_rows.toLocaleString()+' movements \u00b7 '+m.item_count+' items \u00b7 '+m.date_from+' \u2192 '+m.date_to+' \u00b7 verified '+m.validation_match_pct+'% vs closing balance</span>';
-    document.getElementById("lastUpdated").textContent="Live \u00b7 "+m.date_from+" \u2192 "+m.date_to;
-    const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia \u00b7 live from ERP exports";
+    const m=applyData(out);
+    let msg='\u2713 Processed '+(m.unique_rows||0).toLocaleString()+' movements \u00b7 '+m.item_count+' items \u00b7 '+m.date_from+' \u2192 '+m.date_to+' \u00b7 verified '+m.validation_match_pct+'% vs closing';
+    status.innerHTML='<span style="color:var(--green)">'+msg+'</span>';
+    if(SB){
+      status.innerHTML='<span style="color:var(--green)">'+msg+'</span> \u00b7 saving to Supabase\u2026';
+      const {error}=await SB.from("ck_state").upsert({id:"latest",payload:out,updated_at:new Date().toISOString()});
+      status.innerHTML='<span style="color:var(--green)">'+msg+(error?('</span> <span style="color:var(--red)">\u00b7 save failed: '+error.message+'</span>'):' \u00b7 saved to Supabase (shared for everyone) \u2713</span>');
+    } else {
+      status.innerHTML+=' <span style="color:var(--amber)">\u00b7 (Supabase not connected \u2014 shown here only)</span>';
+    }
   }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'; console.error(err); }
 }
 document.getElementById("ckProcess").addEventListener("click",()=>ckProcessUploaded(document.getElementById("ckFiles").files));
 document.getElementById("ckFiles").addEventListener("change",e=>{ if(e.target.files.length) ckProcessUploaded(e.target.files); });
 
-loadLive();
-drawTrend(trendMetric);
+// ---- LOAD SHARED DATA FROM SUPABASE ON OPEN ----
+async function loadFromSupabase(){
+  if(!SB) return false;
+  try{
+    const {data,error}=await SB.from("ck_state").select("payload").eq("id","latest").maybeSingle();
+    if(error) throw error;
+    if(data && data.payload){ applyData(data.payload);
+      const s=document.getElementById("ckStatus"); if(s) s.innerHTML='<span style="color:var(--green)">\u2713 Loaded latest data from Supabase (shared)</span>';
+      return true; }
+  }catch(e){ console.warn("supabase load failed",e); }
+  return false;
+}
+(async()=>{
+  const ok=await loadFromSupabase();
+  if(!ok){ loadLive(); drawTrend(trendMetric); }
+})();
 </script>
 </body>
 </html>
