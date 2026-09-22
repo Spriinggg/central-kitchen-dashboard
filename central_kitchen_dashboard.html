@@ -403,7 +403,17 @@
         route_to:"Production / Training", severity: cost>=100?"high":cost>=30?"medium":"low" }; });
     const liveProd = out.production.products.slice().sort((a,b)=>b.actual-a.actual)
       .map(p => ({ outlet: shortName(p.product), produced: Math.round(p.expected), sold: Math.round(p.actual) }));
-    return { liveYield, liveAlerts, liveProd, weekly: out.weekly, pktPending: true, meta: out.meta, items: out.items };
+    // Auto-order — real reorder suggestion: CK KL items with <1.5 weeks of stock left
+    const weeks = Math.max(1, (out.weekly && out.weekly.days) ? out.weekly.days.length : 8);
+    const liveOrder = (out.items||[])
+      .filter(i => i.storage==="CK KL RAW MATERIAL" && i.category==="FOOD" && i.production_used>0 && i.actual_closing!=null)
+      .map(i => { const perWeek=i.production_used/weeks; const stock=i.actual_closing; const weeksLeft=perWeek>0?stock/perWeek:99;
+                  return { name:i.name, uom:i.uom, perWeek, stock, weeksLeft }; })
+      .filter(x => x.weeksLeft < 1.5)
+      .sort((a,b) => a.weeksLeft - b.weeksLeft)
+      .slice(0,8)
+      .map(x => ({ outlet: shortName(x.name), current_stock: Math.round(x.stock), order_qty: Math.max(1, Math.round(x.perWeek*2 - x.stock)) }));
+    return { liveYield, liveAlerts, liveProd, liveOrder, weekly: out.weekly, pktPending: true, meta: out.meta, items: out.items };
   }
 
   root.CKPipeline = { parseFiles, mergeRaw, build, processFiles, mapAgents, classify };
@@ -2956,7 +2966,7 @@ function render() {
   if (liveOrder) {
     const rows = liveOrder
       .filter(o => state.outlet==="all" || o.outlet===state.outlet)
-      .map(o => `<div class="line"><span>Outlet ${o.outlet} <span style="color:var(--text-mut)">(have ${o.current_stock})</span></span><span style="color:var(--accent); font-weight:600">order ${o.order_qty}</span></div>`)
+      .map(o => `<div class="line"><span>${o.outlet} <span style="color:var(--text-mut)">(have ${o.current_stock})</span></span><span style="color:var(--accent); font-weight:600">order ${o.order_qty}</span></div>`)
       .join("");
     document.getElementById("orderList").innerHTML =
       `<div class="src-badge live">● live from auto_order · draft, needs approval</div>` +
@@ -3074,7 +3084,7 @@ function slimRaw(raw){
 }
 function applyData(out){
   const A=window.CK.CKPipeline.mapAgents(out);
-  liveYield=A.liveYield; liveAlerts=A.liveAlerts; liveProd=A.liveProd; liveLog=null;
+  liveYield=A.liveYield; liveAlerts=A.liveAlerts; liveProd=A.liveProd; liveOrder=A.liveOrder; liveLog=null;
   window.__pktPending=true;
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
   render(); drawTrend(trendMetric); animateMetrics();
