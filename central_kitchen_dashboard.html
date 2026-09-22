@@ -134,7 +134,19 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="loginOverlay" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999;">
+  <form id="loginForm" style="width:100%;max-width:360px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:16px;box-shadow:var(--glow);padding:26px 24px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div class="logo"><span class="l1">US</span><span class="l2">PIZZA</span></div>
+      <div><p style="margin:0;font-size:17px;font-weight:600;">Central Kitchen</p><p style="margin:0;font-size:12px;color:var(--text-soft);">Admin sign in</p></div>
+    </div>
+    <input id="loginEmail" type="email" placeholder="Email" autocomplete="username" required style="width:100%;margin-bottom:10px;padding:11px 13px;border-radius:10px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.6);font-size:14px;outline:none;">
+    <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" required style="width:100%;margin-bottom:14px;padding:11px 13px;border-radius:10px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.6);font-size:14px;outline:none;">
+    <button type="submit" style="width:100%;padding:11px;border:none;border-radius:10px;background:var(--brand-navy);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Sign in</button>
+    <p id="loginErr" style="margin:12px 0 0;font-size:12.5px;color:var(--red);text-align:center;min-height:16px;"></p>
+  </form>
+</div>
+<div class="wrap" style="display:none;">
 
   <div class="head">
     <div class="head-left">
@@ -144,7 +156,7 @@
         <p class="subtitle">dough &amp; logistics · today</p>
       </div>
     </div>
-    <span id="lastUpdated" style="font-size:12px; color:var(--text-soft);">Updated —</span>
+    <span id="lastUpdated" style="font-size:12px; color:var(--text-soft);">Updated —</span> <button id="logoutBtn" class="nav-btn" style="margin-left:10px;cursor:pointer;font-size:12px;padding:5px 12px;">Sign out</button>
   </div>
 
   <div class="nav" id="nav">
@@ -3135,7 +3147,28 @@ async function loadFromSupabase(){
   }catch(e){ console.warn("supabase load failed",e); }
   return false;
 }
-(async function(){ const ok=await loadFromSupabase(); if(!ok){ loadLive(); drawTrend(trendMetric); } })();
+let __inited=false;
+async function initApp(){ if(__inited) return; __inited=true; const ok=await loadFromSupabase(); if(!ok){ loadLive(); drawTrend(trendMetric); } }
+function showApp(){ document.getElementById("loginOverlay").style.display="none"; const w=document.querySelector(".wrap"); if(w) w.style.display=""; initApp(); }
+function showLogin(){ document.getElementById("loginOverlay").style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
+const _lf=document.getElementById("loginForm");
+if(_lf) _lf.addEventListener("submit", async function(e){
+  e.preventDefault();
+  const em=document.getElementById("loginEmail").value.trim();
+  const pw=document.getElementById("loginPass").value;
+  const err=document.getElementById("loginErr"); err.style.color="var(--text-soft)"; err.textContent="Signing in\u2026";
+  if(!SB){ err.style.color="var(--red)"; err.textContent="Supabase not connected."; return; }
+  const {error}=await SB.auth.signInWithPassword({email:em,password:pw});
+  if(error){ err.style.color="var(--red)"; err.textContent=error.message; }
+  else { err.textContent=""; showApp(); }
+});
+const _lo=document.getElementById("logoutBtn");
+if(_lo) _lo.addEventListener("click", async function(){ if(SB) await SB.auth.signOut(); location.reload(); });
+(async function(){
+  if(!SB){ showApp(); return; }               // fallback if auth lib missing
+  try{ const {data}=await SB.auth.getSession(); if(data && data.session){ showApp(); } else { showLogin(); } }
+  catch(e){ showLogin(); }
+})();
 </script>
 </body>
 </html>
