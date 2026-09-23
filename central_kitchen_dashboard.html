@@ -173,7 +173,7 @@
   <div id="loadState" style="display:none;text-align:center;padding:14px 16px;margin-bottom:16px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-border);font-size:13px;color:var(--text-soft);"></div>
   <div class="card" id="uploadPanel" style="margin-bottom:16px;">
     <p class="card-title">⬆️ Upload ERP data</p>
-    <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 12px;">Drop the ERP Excel exports — processed in your browser and saved to Supabase (shared). Add new files anytime — data accumulates, it does not wipe. Needed: Stock Movement (Raw Materials) chunks, Stock Balance (opening + closing), Job Production Variance (Output), Wastage Report.</p>
+    <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 12px;">Drop the Excel exports — processed in your browser and saved to Supabase (shared). Add new files anytime — data accumulates, it does not wipe.<br><b>Kitchen (CK):</b> Stock Movement (Raw Materials) chunks, Stock Balance (opening + closing), Job Production Variance (Output), Wastage Report.<br><b>PKT (USFOOD):</b> USFOOD Frozen + Ambient — Stock Movement + Stock Balance (daily). PKT files auto-detected and routed to the Logistics section.</p>
     <input type="file" id="ckFiles" multiple accept=".xlsx" style="font-size:13px;">
     <button id="ckProcess" class="nav-btn" style="margin-left:8px;cursor:pointer;">Process files</button>
     <div id="ckStatus" style="font-size:12.5px;color:var(--text-soft);margin-top:10px;"></div>
@@ -231,10 +231,6 @@
       <div id="alertList"></div>
     </div>
     <div class="card">
-      <p class="card-title">🚚 Logistics log (PKT)</p>
-      <div id="logList"></div>
-    </div>
-    <div class="card">
       <p class="card-title">📦 Weekly auto-order</p>
       <div id="orderList"></div>
     </div>
@@ -246,6 +242,17 @@
       <p class="card-title">🗑️ Wastage detail (by cost)</p>
       <div id="wasteList"></div>
     </div>
+  </div>
+
+  <div class="card" id="pktCard" style="margin-top:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <p class="card-title" style="margin:0;">🚚 PKT Logistics · USFOOD warehouse</p>
+      <div class="toggle" id="pktRegionToggle">
+        <button data-reg="MY" class="active">Malaysia</button>
+        <button data-reg="SG">Singapore</button>
+      </div>
+    </div>
+    <div id="logList"></div>
   </div>
 
   <div class="card" style="margin-top:14px;">
@@ -506,7 +513,67 @@
 
   root.CKPipeline = { parseFiles, mergeRaw, build, processFiles, mapAgents, recipeVariance, classify };
 })(typeof module !== "undefined" ? module.exports : (window.CK = window.CK || {}));
-
+</script>
+<script>
+/* ===== PKT (USFOOD warehouse) parser — WMS daily exports, separate from CK ===== */
+(function(root){
+  function dnorm(s){ if(!s) return ""; const p=String(s).trim().split(/\s+/).slice(0,3); const d=new Date(p.join(" ")); if(isNaN(d)) return ""; return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function num(x){ const n=Number(x); return isNaN(n)?0:n; }
+  function temp(storer){ const s=String(storer||"").toUpperCase(); return s.indexOf("FMUF")>=0?"frozen":(s.indexOf("AMUF")>=0?"ambient":"other"); }
+  function region(ft){ const s=String(ft||"").toUpperCase(); return /^MY/.test(s)?"MY":(/^SG/.test(s)?"SG":"OTHER"); }
+  function detect(head){ const H=(head||[]).map(x=>String(x||"").toUpperCase());
+    if(H.indexOf("FROMTO")>=0 && H.indexOf("OUT")>=0) return "mvt";
+    if(H.indexOf("AVAILABLE")>=0 && H.indexOf("LOC")>=0) return "bal";
+    return null; }
+  function isPKT(files){ return (files||[]).some(f=>(f.sheets||[]).some(sh=>detect((sh.rows||[])[0]))); }
+  function parseFiles(files){
+    const raw={ mvt:[], bal:[], mvtKeys:{}, dates:{} };
+    (files||[]).forEach(f=>{ (f.sheets||[]).forEach(sh=>{
+      const rows=sh.rows||[]; if(!rows.length) return; const kind=detect(rows[0]); if(!kind) return;
+      const body=rows.slice(1).filter(v=>v&&v[0]);
+      if(kind==="mvt"){
+        body.forEach(v=>{ const t=temp(v[0]); const reg=region(v[7]); const date=dnorm(v[10]);
+          const key=[v[6],v[2],v[7],v[15],v[12]].join("|"); if(raw.mvtKeys[key]) return; raw.mvtKeys[key]=1;
+          raw.mvt.push({date:date,region:reg,outlet:String(v[7]||""),sku:String(v[2]||""),desc:String(v[3]||""),uom:String(v[8]||""),out:num(v[12]),inc:num(v[11]),doc:String(v[15]||""),so:String(v[6]||""),temp:t});
+          if(date) raw.dates[date]=1; });
+      } else {
+        body.forEach(v=>{ raw.bal.push({sku:String(v[3]||""),desc:String(v[6]||""),uom:String(v[8]||""),qty:num(v[12]),available:num(v[15]),temp:temp(v[0])}); });
+      }
+    }); });
+    return raw;
+  }
+  function mergeRaw(a,b){
+    if(!a) return b; if(!b) return a;
+    const out={ mvt:a.mvt.slice(), mvtKeys:Object.assign({},a.mvtKeys), bal:a.bal.slice(), dates:Object.assign({},a.dates) };
+    b.mvt.forEach(m=>{ const key=[m.so,m.sku,m.outlet,m.doc,m.out].join("|"); if(out.mvtKeys[key])return; out.mvtKeys[key]=1; out.mvt.push(m); });
+    Object.keys(b.dates).forEach(d=>out.dates[d]=1);
+    const bTemps={}; b.bal.forEach(x=>bTemps[x.temp]=1);
+    out.bal = out.bal.filter(x=>!bTemps[x.temp]).concat(b.bal);
+    return out;
+  }
+  function build(raw, opts){
+    opts=opts||{}; const reg=opts.region||"MY";
+    const mv=(raw.mvt||[]).filter(m=>m.region===reg);
+    const outlets={}, byItem={}; let totalOut=0; const skus={};
+    mv.forEach(m=>{ totalOut+=m.out; outlets[m.outlet]=(outlets[m.outlet]||0)+m.out; skus[m.sku]=1;
+      byItem[m.sku]=byItem[m.sku]||{sku:m.sku,desc:m.desc,uom:m.uom,out:0}; byItem[m.sku].out+=m.out; });
+    const outletList=Object.entries(outlets).map(function(e){return {outlet:e[0],out:e[1]};}).sort((a,b)=>b.out-a.out);
+    const log=mv.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(m=>({date:m.date,outlet:m.outlet,sku:m.sku,desc:m.desc,uom:m.uom,out:m.out,doc:m.doc,temp:m.temp}));
+    const topItems=Object.keys(byItem).map(k=>byItem[k]).sort((a,b)=>b.out-a.out).slice(0,10);
+    const stock={frozen:{qty:0,avail:0,skus:0},ambient:{qty:0,avail:0,skus:0}};
+    const seen={frozen:{},ambient:{}};
+    (raw.bal||[]).forEach(b=>{ const t=b.temp==="frozen"?"frozen":(b.temp==="ambient"?"ambient":null); if(!t)return;
+      stock[t].qty+=b.qty; stock[t].avail+=b.available; if(!seen[t][b.sku]){seen[t][b.sku]=1;stock[t].skus++;} });
+    const lowMap={};
+    (raw.bal||[]).forEach(b=>{ const k=b.temp+"|"+b.sku; lowMap[k]=lowMap[k]||{desc:b.desc,uom:b.uom,temp:b.temp,avail:0}; lowMap[k].avail+=b.available; });
+    const low=Object.keys(lowMap).map(k=>lowMap[k]).filter(x=>x.avail<=5).sort((a,b)=>a.avail-b.avail).slice(0,10);
+    const dates=Object.keys(raw.dates||{}).sort();
+    return { region:reg, totalOut:Math.round(totalOut), outletCount:outletList.length, skuCount:Object.keys(skus).length,
+      outlets:outletList, log:log, topItems:topItems, stock:stock, low:low, dateFrom:dates[0]||null, dateTo:dates[dates.length-1]||null,
+      mvtRows:mv.length, allDates:dates };
+  }
+  root.parseFiles=parseFiles; root.mergeRaw=mergeRaw; root.build=build; root.detect=detect; root.isPKT=isPKT;
+})(window.PKT = window.PKT || {});
 </script>
 <script id="recipedata" type="application/json">{
   "source": "US Pizza Center Kitchen - Knowledge / Recipe Cards",
@@ -3085,10 +3152,8 @@ function render() {
   const varCount = liveAlerts
     ? liveAlerts.filter(a => a.severity !== "low").length
     : d.metrics.alerts;
-  // PKT mismatches: count of PKT records with status mismatch
-  const mismatchCount = window.__pktPending ? "—" : liveLog
-    ? liveLog.filter(l => l.status === "mismatch").length
-    : d.metrics.mismatch;
+  // PKT dispatched (MY): units shipped from PKT warehouse to MY outlets
+  const pktDispMY = (window.PKT_SUMMARY && window.PKT_SUMMARY.MY) ? Number(window.PKT_SUMMARY.MY.totalOut).toLocaleString() : "—";
   // Products tracked: from HOD if live, else sample
   const outletCount = liveProd ? liveProd.length : d.metrics.outlets;
 
@@ -3096,21 +3161,20 @@ function render() {
     <div class="metric"><p class="metric-label">Outlets tracked</p><p class="metric-val">${outletCount}</p></div>
     <div class="metric"><p class="metric-label">Avg waste</p><p class="metric-val">${avgWaste}</p></div>
     <div class="metric"><p class="metric-label">Variance alerts</p><p class="metric-val" style="color:var(--amber)">${varCount}</p></div>
-    <div class="metric"><p class="metric-label">PKT mismatches</p><p class="metric-val" style="color:var(--red)">${mismatchCount}</p></div>`;
+    <div class="metric"><p class="metric-label">PKT dispatched (MY)</p><p class="metric-val">${pktDispMY}</p></div>`;
 
   // summary banner
   const banner = document.getElementById("banner");
   if (banner) {
     const highAlerts = liveAlerts ? liveAlerts.filter(a => a.severity === "high").length : 0;
-    if (mismatchCount === 0 && highAlerts === 0) {
+    const pktLow = (window.PKT_SUMMARY && window.PKT_SUMMARY.MY && window.PKT_SUMMARY.MY.low) ? window.PKT_SUMMARY.MY.low.length : 0;
+    const parts = [];
+    if (highAlerts > 0) parts.push(`${highAlerts} recipe variance alert(s)`);
+    if (pktLow > 0) parts.push(`${pktLow} PKT low-stock item(s)`);
+    if (!parts.length) {
       banner.innerHTML = `<span style="color:var(--green)">✓ All normal today</span>`;
       banner.style.background = "var(--green-bg)";
     } else {
-      const parts = [];
-      if (highAlerts > 0) parts.push(`${highAlerts} recipe variance alert(s)`);
-      // Only mention PKT when its data is actually connected (not pending / no access yet)
-      if (!window.__pktPending && typeof mismatchCount === "number" && mismatchCount > 0)
-        parts.push(`${mismatchCount} PKT mismatch(es)`);
       banner.innerHTML = `<span style="color:var(--red)">⚠ ${parts.join(" · ")} today</span>`;
       banner.style.background = "var(--red-bg)";
     }
@@ -3165,25 +3229,8 @@ function render() {
       <span style="color:${s.color}">${a.text}</span></div>`;
   }).join("") : `<div class="empty">No alerts match this filter</div>`);
 
-  // logistics — PKT pending / live / sample
-  if (window.__pktPending) {
-    document.getElementById("logList").innerHTML = '<div class="src-badge">○ PKT data not available yet — awaiting access</div><div class="empty">Logistics (PKT) will populate once access is granted.</div>';
-  } else if (liveLog) {
-    const rows = liveLog.map(l => {
-      return l.status === "matched"
-        ? `<div class="line"><span>Route ${l.route} <span style="color:var(--text-mut)">(${l.outlet})</span></span><span style="color:var(--green)">✓ matched</span></div>`
-        : `<div class="line" style="background:var(--red-bg)"><span style="color:var(--red)">Route ${l.route} <span style="color:var(--text-mut)">(${l.outlet})</span></span><span style="color:var(--red)">✗ short ${l.gap}</span></div>`;
-    }).join("");
-    document.getElementById("logList").innerHTML =
-      `<div class="src-badge live">● live from pkt_email_reader</div>` + rows;
-  } else {
-    document.getElementById("logList").innerHTML =
-      `<div class="src-badge">○ sample data</div>` + d.logistics.map(l => {
-        return l.ok
-          ? `<div class="line"><span>Route ${l.route}</span><span style="color:var(--green)">✓ matched</span></div>`
-          : `<div class="line" style="background:var(--red-bg)"><span style="color:var(--red)">Route ${l.route}</span><span style="color:var(--red)">✗ mismatch</span></div>`;
-      }).join("");
-  }
+  // logistics — PKT (real WMS dispatches, MY/SG separate)
+  renderPKT();
 
   // weekly auto-order (CK GRN Phase 2)
   if (liveOrder) {
@@ -3425,6 +3472,59 @@ function openSummary(){
   const w=window.open("","_blank"); if(!w){ alert("Please allow pop-ups to open the summary."); return; }
   w.document.write(H); w.document.close();
 }
+// ---- PKT (USFOOD warehouse) — real WMS dispatches, MY/SG separate ----
+let PKTRAW=null, pktRegion="MY";
+window.PKT_SUMMARY=null;
+function refreshPKTSummary(){
+  if(PKTRAW && PKTRAW.mvt && PKTRAW.mvt.length && window.PKT){
+    window.PKT_SUMMARY={ MY:window.PKT.build(PKTRAW,{region:"MY"}), SG:window.PKT.build(PKTRAW,{region:"SG"}) };
+    window.__pktPending=false;
+  } else { window.PKT_SUMMARY=null; window.__pktPending=true; }
+}
+function renderPKT(){
+  const el=document.getElementById("logList"); if(!el) return;
+  if(!PKTRAW || !PKTRAW.mvt || !PKTRAW.mvt.length){
+    el.innerHTML='<div class="src-badge">○ PKT data not loaded yet — upload the USFOOD daily files (frozen + ambient, movement + balance).</div>';
+    return;
+  }
+  const b=window.PKT.build(PKTRAW,{region:pktRegion});
+  const rm=n=>Number(n||0).toLocaleString();
+  const dspan = b.dateFrom===b.dateTo ? (b.dateFrom||"") : ((b.dateFrom||"")+" → "+(b.dateTo||""));
+  let h='<div class="src-badge live">● live from PKT WMS · dispatched '+dspan+'</div>';
+  h+='<div style="display:flex;gap:22px;flex-wrap:wrap;margin:6px 0 12px;">';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Dispatched ('+pktRegion+')</p><p style="font-size:21px;font-weight:700;margin:0">'+rm(b.totalOut)+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Outlets</p><p style="font-size:21px;font-weight:700;margin:0">'+b.outletCount+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">SKUs</p><p style="font-size:21px;font-weight:700;margin:0">'+b.skuCount+'</p></div>';
+  h+='</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Top outlets ('+pktRegion+')</div>';
+  b.outlets.slice(0,8).forEach(o=>{ h+='<div class="line"><span>'+o.outlet+'</span><span style="font-weight:600">'+rm(o.out)+'</span></div>'; });
+  if(!b.outlets.length) h+='<div class="empty">No dispatches for '+pktRegion+'</div>';
+  h+='</div>';
+  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Warehouse stock on-hand <span style="text-transform:none">(shared MY+SG)</span></div>';
+  h+='<div class="line"><span>❄️ Frozen available</span><span style="font-weight:600">'+rm(b.stock.frozen.avail)+' <span style="color:var(--text-mut);font-weight:400">('+b.stock.frozen.skus+' SKU)</span></span></div>';
+  h+='<div class="line"><span>🌡️ Ambient available</span><span style="font-weight:600">'+rm(b.stock.ambient.avail)+' <span style="color:var(--text-mut);font-weight:400">('+b.stock.ambient.skus+' SKU)</span></span></div>';
+  if(b.low && b.low.length){ h+='<div style="margin-top:8px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Low stock (≤5)</div>';
+    b.low.slice(0,5).forEach(x=>{ h+='<div class="line"><span style="max-width:66%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+x.desc+'</span><span style="color:var(--red);font-weight:600">'+rm(x.avail)+' '+(x.uom||"").toLowerCase()+'</span></div>'; }); }
+  h+='</div></div>';
+  h+='<div style="margin:12px 0 4px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Dispatch log ('+pktRegion+') · '+b.log.length+' line(s)</div>';
+  h+='<div style="max-height:240px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:10px;">';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>'+
+     '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Date</th>'+
+     '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Outlet</th>'+
+     '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Item</th>'+
+     '<th style="text-align:right;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Qty</th>'+
+     '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">DO</th></tr></thead><tbody>';
+  b.log.slice(0,150).forEach(l=>{ h+='<tr>'+
+    '<td style="padding:4px 8px;border-top:1px solid var(--glass-border)">'+(l.date||"")+'</td>'+
+    '<td style="padding:4px 8px;border-top:1px solid var(--glass-border)">'+l.outlet+'</td>'+
+    '<td style="padding:4px 8px;border-top:1px solid var(--glass-border);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+l.desc+'</td>'+
+    '<td style="padding:4px 8px;border-top:1px solid var(--glass-border);text-align:right">'+rm(l.out)+'</td>'+
+    '<td style="padding:4px 8px;border-top:1px solid var(--glass-border);color:var(--text-mut)">'+l.doc+'</td></tr>'; });
+  h+='</tbody></table></div>';
+  if(b.log.length>150) h+='<div style="font-size:10.5px;color:var(--text-mut);margin-top:4px">Showing first 150 of '+b.log.length+' lines</div>';
+  el.innerHTML=h;
+}
 function applyData(out){
   const A=window.CK.CKPipeline.mapAgents(out);
   liveYield=A.liveYield; liveProd=A.liveProd; liveOrder=A.liveOrder; liveLog=null;
@@ -3439,7 +3539,6 @@ function applyData(out){
         route_to: sev==="high"?"Review / Audit":(sev==="medium"?"Training":"-") }; });
     if(!liveAlerts.length) liveAlerts=A.liveAlerts;
   }catch(e){ console.warn("recipe variance failed",e); liveAlerts=A.liveAlerts; }
-  window.__pktPending=true;
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
   window.__OUT__=out;
   if(typeof setLoadState==="function") setLoadState("");
@@ -3515,25 +3614,46 @@ async function ckProcessUploaded(list){
   if(!list.length){ status.textContent="Please choose the ERP Excel files first."; return; }
   status.textContent="Reading "+list.length+" file(s)…";
   try{
-    const files=[]; for(const f of list){ files.push(await ckReadFile(f)); }
-    const newRaw=window.CK.CKPipeline.parseFiles(files);
-    RAW = RAW ? window.CK.CKPipeline.mergeRaw(RAW, newRaw) : newRaw;
-    setDefaultRange(); rebuild();
-    const m=window.CK.CKPipeline.build(RAW).meta;
-    let msg="✓ Data now: "+(m.unique_rows||0).toLocaleString()+" movements · "+m.item_count+" items · "+m.date_from+" → "+m.date_to+" · verified "+m.validation_match_pct+" percent";
-    status.innerHTML='<span style="color:var(--green)">'+msg+'</span>';
-    if(SB){
-      status.innerHTML='<span style="color:var(--green)">'+msg+'</span> · saving…';
-      const nowIso=new Date().toISOString();
-      const pl=slimRaw(RAW); pl.__uploadedBy=CURRENT_USER||""; pl.__uploadedAt=nowIso;
-      UPLOAD_INFO={by:pl.__uploadedBy, at:pl.__uploadedAt};
-      const {error}=await SB.from("ck_state").upsert({id:"latest",payload:pl,updated_at:nowIso});
-      if(!error){ rebuild(); }   // refresh header so "updated by" shows immediately
-      status.innerHTML='<span style="color:var(--green)">'+msg+(error?('</span> <span style="color:var(--red)">· save failed: '+error.message+'</span>'):' · saved & shared ✓</span>');
-    } else { status.innerHTML+=' <span style="color:var(--amber)">· (Supabase not connected)</span>'; }
+    const ckFiles=[], pktFiles=[];
+    for(const f of list){ const rf=await ckReadFile(f); (window.PKT && window.PKT.isPKT([rf]) ? pktFiles : ckFiles).push(rf); }
+    const parts=[]; const nowIso=new Date().toISOString();
+
+    // ---- CK (kitchen) files ----
+    if(ckFiles.length){
+      const newRaw=window.CK.CKPipeline.parseFiles(ckFiles);
+      RAW = RAW ? window.CK.CKPipeline.mergeRaw(RAW, newRaw) : newRaw;
+      setDefaultRange(); rebuild();
+      const m=window.CK.CKPipeline.build(RAW).meta;
+      parts.push("CK: "+(m.unique_rows||0).toLocaleString()+" movements · "+m.item_count+" items · "+m.date_from+" → "+m.date_to+" · verified "+m.validation_match_pct+"%");
+      if(SB){
+        const pl=slimRaw(RAW); pl.__uploadedBy=CURRENT_USER||""; pl.__uploadedAt=nowIso;
+        UPLOAD_INFO={by:pl.__uploadedBy, at:pl.__uploadedAt};
+        const {error}=await SB.from("ck_state").upsert({id:"latest",payload:pl,updated_at:nowIso});
+        if(!error){ rebuild(); } else parts.push("⚠ CK save failed: "+error.message);
+      }
+    }
+
+    // ---- PKT (USFOOD warehouse) files ----
+    if(pktFiles.length){
+      const newP=window.PKT.parseFiles(pktFiles);
+      PKTRAW = PKTRAW ? window.PKT.mergeRaw(PKTRAW, newP) : newP;
+      refreshPKTSummary(); renderPKT(); if(typeof render==="function") render();
+      const my=window.PKT_SUMMARY&&window.PKT_SUMMARY.MY, sg=window.PKT_SUMMARY&&window.PKT_SUMMARY.SG;
+      parts.push("PKT: MY "+(my?my.totalOut:0)+" units/"+(my?my.outletCount:0)+" outlets · SG "+(sg?sg.totalOut:0)+" · dates "+(my?my.dateFrom:"")+"→"+(my?my.dateTo:""));
+      if(SB){
+        PKTRAW.__uploadedBy=CURRENT_USER||""; PKTRAW.__uploadedAt=nowIso;
+        const {error}=await SB.from("ck_state").upsert({id:"pkt",payload:PKTRAW,updated_at:nowIso});
+        if(error) parts.push("⚠ PKT save failed: "+error.message);
+      }
+    }
+
+    if(!ckFiles.length && !pktFiles.length){ status.innerHTML='<span style="color:var(--amber)">No recognised ERP/PKT files in that selection.</span>'; return; }
+    const saved = SB ? " · saved & shared ✓" : " · (Supabase not connected)";
+    status.innerHTML='<span style="color:var(--green)">✓ '+parts.join(" &nbsp;|&nbsp; ")+saved+'</span>';
   }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'; console.error(err); }
 }
 (function(){ const bs=document.getElementById("btnSummary"); if(bs) bs.addEventListener("click", openSummary); })();
+(function(){ const t=document.getElementById("pktRegionToggle"); if(t) t.addEventListener("click",function(e){ const r=e.target.dataset.reg; if(!r)return; pktRegion=r; t.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.reg===r)); renderPKT(); }); })();
 document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
 document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
 document.getElementById("periodToggle").addEventListener("click",function(e){
@@ -3566,14 +3686,27 @@ async function loadFromSupabase(){
   }catch(e){ console.warn("supabase load failed",e); }
   return false;
 }
+async function loadPKTFromSupabase(){
+  if(!SB) return false;
+  try{
+    const {data,error}=await SB.from("ck_state").select("payload").eq("id","pkt").maybeSingle();
+    if(error) throw error;
+    if(data && data.payload && data.payload.mvt){
+      PKTRAW=data.payload; refreshPKTSummary(); renderPKT(); if(typeof render==="function") render();
+      return true;
+    }
+  }catch(e){ console.warn("pkt load failed",e); }
+  return false;
+}
 let __inited=false;
 function setLoadState(msg){ const el=document.getElementById("loadState"); if(!el) return; if(msg){ el.textContent=msg; el.style.display=""; } else { el.style.display="none"; } }
 async function initApp(){
   if(__inited) return; __inited=true;
   setLoadState("Loading data…");                 // show while Supabase loads (no fake sample)
   const ok=await loadFromSupabase();
-  if(ok){ setLoadState(""); }
-  else { setLoadState("No data loaded yet — upload the ERP files below to populate the dashboard."); }
+  const okp=await loadPKTFromSupabase();
+  if(ok||okp){ setLoadState(""); }
+  else { setLoadState("No data loaded yet — upload the ERP / PKT files below to populate the dashboard."); }
 }
 function showApp(){ document.getElementById("loginOverlay").style.display="none"; const w=document.querySelector(".wrap"); if(w) w.style.display=""; initApp(); }
 function showLogin(){ document.getElementById("loginOverlay").style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
