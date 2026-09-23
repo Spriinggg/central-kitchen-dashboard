@@ -208,7 +208,12 @@
       </div>
     </div>
   </div>
-  <div id="periodLabel" style="font-size:12px;color:var(--text-soft);margin:-6px 0 14px;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:-6px 0 14px;">
+    <span id="periodLabel" style="font-size:12px;color:var(--text-soft);"></span>
+    <button id="btnSummary" class="nav-btn" style="cursor:pointer;font-size:12px;padding:7px 14px;white-space:nowrap;">🖨 Summary / PDF</button>
+  </div>
+
+  <div id="momCard" class="card" style="margin:0 0 16px;"></div>
 
   <div class="metrics" id="metrics"></div>
 
@@ -3347,6 +3352,79 @@ function renderWastage(out){
   if(rows.length>40) h+='<div style="font-size:10.5px;color:var(--text-mut);margin-top:4px">+ '+(rows.length-40)+' more — see Details / export</div>';
   el.innerHTML=h;
 }
+// ---- #4 MONTH-OVER-MONTH + #5 SUMMARY ----
+function metricsOf(out){
+  const prod=((out.production&&out.production.products)||[]).reduce((s,p)=>s+(p.actual||0),0);
+  const jobs=out.production?out.production.jobs:0;
+  const waste=(out.wastage&&out.wastage.total_cost)||0;
+  const cost=(out.cost&&out.cost.consumed_value)||0;
+  return { prod:Math.round(prod), jobs:jobs, waste:Math.round(waste*100)/100, cost:Math.round(cost) };
+}
+function renderMoM(){
+  const el=document.getElementById("momCard"); if(!el) return;
+  if(!RAW||!FULL_MAX){ el.style.display="none"; return; }
+  el.style.display="";
+  const y=FULL_MAX.getFullYear(), m=FULL_MAX.getMonth(), day=FULL_MAX.getDate();
+  const daysPrev=new Date(y,m,0).getDate(); const pEnd=Math.min(day,daysPrev);
+  const currR={from:new Date(y,m,1), to:new Date(y,m,day,23,59,59)};
+  const prevR={from:new Date(y,m-1,1), to:new Date(y,m-1,pEnd,23,59,59)};
+  const A=metricsOf(window.CK.CKPipeline.build(RAW,currR));
+  const B=metricsOf(window.CK.CKPipeline.build(RAW,prevR));
+  const mn=d=>d.toLocaleDateString(undefined,{month:"short"});
+  const curLbl=mn(currR.from)+" 1–"+day, prvLbl=mn(prevR.from)+" 1–"+pEnd;
+  if(B.prod===0 && B.waste===0 && B.cost===0){
+    el.innerHTML='<p class="card-title">📊 Month-over-month</p><div class="empty">Not enough history to compare yet — no data in the previous month ('+prvLbl+').</div>';
+    return;
+  }
+  function delta(cur,prev,goodUp){ if(!prev) return {txt:"—",col:"var(--text-mut)"};
+    const pct=Math.round((cur-prev)/prev*1000)/10; const arrow=pct>0?"▲":(pct<0?"▼":"—");
+    let col="var(--text-mut)"; if(goodUp!==null && pct!==0){ const good=goodUp?(pct>0):(pct<0); col=good?"var(--green)":"var(--red)"; }
+    return {txt:arrow+" "+Math.abs(pct)+"%", col:col}; }
+  const rm=n=>"RM "+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  const num=n=>Number(n||0).toLocaleString();
+  const items=[
+    {l:"Production output", v:num(A.prod), p:num(B.prod), d:delta(A.prod,B.prod,true)},
+    {l:"Waste cost", v:rm(A.waste), p:rm(B.waste), d:delta(A.waste,B.waste,false)},
+    {l:"Raw consumed", v:rm(A.cost), p:rm(B.cost), d:delta(A.cost,B.cost,null)} ];
+  let h='<p class="card-title">📊 Month-over-month <span style="font-weight:400;color:var(--text-mut);font-size:12px">'+curLbl+' vs '+prvLbl+'</span></p>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">';
+  items.forEach(it=>{ h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0 0 3px">'+it.l+'</p>'+
+    '<p style="font-size:21px;font-weight:700;margin:0">'+it.v+'</p>'+
+    '<p style="font-size:12px;margin:3px 0 0;color:'+it.d.col+';font-weight:600">'+it.d.txt+' <span style="color:var(--text-mut);font-weight:400">vs '+it.p+'</span></p></div>'; });
+  h+='</div>';
+  el.innerHTML=h;
+}
+function openSummary(){
+  const out=window.__OUT__; if(!out){ alert("No data loaded yet — upload the ERP files first."); return; }
+  const m=out.meta||{};
+  const rm=n=>"RM "+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  const num=n=>Number(n||0).toLocaleString();
+  const A=metricsOf(out);
+  const yieldRows=((typeof liveYield!=="undefined"&&liveYield)||[]).map(function(y){return "<tr><td>"+y.size+"</td><td style='text-align:right'>"+y.yield_pct+"%</td><td style='text-align:right'>"+y.waste_pct+"%</td></tr>";}).join("");
+  const alerts=((typeof liveAlerts!=="undefined"&&liveAlerts)||[]).filter(function(a){return a.severity==="high";}).slice(0,12).map(function(a){return "<tr><td>"+a.material+"</td><td>"+(a.note||a.cause||"")+"</td></tr>";}).join("");
+  const recs=(out.wastage&&out.wastage.records)||[]; const byR={}; recs.forEach(function(w){var k=w.reason||"—"; byR[k]=(byR[k]||0)+(Number(w.cost)||0);});
+  const causes=Object.keys(byR).sort(function(a,b){return byR[b]-byR[a];}).map(function(c){return "<tr><td>"+c+"</td><td style='text-align:right'>"+rm(byR[c])+"</td></tr>";}).join("");
+  const genBy=(UPLOAD_INFO&&UPLOAD_INFO.by)||CURRENT_USER||"";
+  const H="<!doctype html><html><head><meta charset='utf-8'><title>Central Kitchen Summary "+(m.date_from||"")+" to "+(m.date_to||"")+"</title>"+
+  "<style>body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,sans-serif;color:#1a1a1a;padding:32px;max-width:820px;margin:auto}h1{font-size:22px;margin:0 0 2px}.sub{color:#666;font-size:12px;margin:0 0 3px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#555;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:5px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px 8px;border-bottom:1px solid #eee;text-align:left}th{color:#666;font-weight:600}.kpis{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0}.kpi{flex:1;min-width:110px}.kpi .v{font-size:22px;font-weight:700}.kpi .l{font-size:10.5px;color:#666;text-transform:uppercase;letter-spacing:.03em}.foot{margin-top:30px;font-size:10.5px;color:#999;line-height:1.5}@media print{body{padding:6px}}</style></head><body>"+
+  "<h1>Central Kitchen — Summary</h1>"+
+  "<p class='sub'>Malaysia · Period: "+(m.date_from||"—")+" → "+(m.date_to||"—")+"</p>"+
+  "<p class='sub'>Generated "+new Date().toLocaleString()+(genBy?(" · by "+genBy):"")+"</p>"+
+  "<div class='kpis'><div class='kpi'><div class='v'>"+num(A.prod)+"</div><div class='l'>Production output</div></div>"+
+  "<div class='kpi'><div class='v'>"+A.jobs+"</div><div class='l'>Jobs</div></div>"+
+  "<div class='kpi'><div class='v'>"+rm(A.cost)+"</div><div class='l'>Raw consumed</div></div>"+
+  "<div class='kpi'><div class='v'>"+rm(A.waste)+"</div><div class='l'>Waste cost</div></div></div>"+
+  "<h2>Dough yield &amp; waste</h2><table><tr><th>Size</th><th style='text-align:right'>Yield</th><th style='text-align:right'>Waste</th></tr>"+(yieldRows||"<tr><td colspan='3'>—</td></tr>")+"</table>"+
+  "<h2>Cost overview</h2><table><tr><td>Stock value on hand</td><td style='text-align:right'>"+rm(out.cost&&out.cost.stock_value)+"</td></tr>"+
+  "<tr><td>Raw consumed (production)</td><td style='text-align:right'>"+rm(out.cost&&out.cost.consumed_value)+"</td></tr>"+
+  "<tr><td>Waste cost</td><td style='text-align:right'>"+rm(out.cost&&out.cost.waste_cost)+"</td></tr></table>"+
+  "<h2>Wastage by cause</h2><table>"+(causes||"<tr><td>No wastage records</td></tr>")+"</table>"+
+  "<h2>High recipe-variance alerts</h2><table>"+(alerts||"<tr><td>None</td></tr>")+"</table>"+
+  "<p class='foot'>US Pizza Central Kitchen dashboard · figures from ERP exports. Recipe-variance figures use approximate name-matching between ERP items and recipes, so large outliers are flags to verify, not confirmed loss.</p>"+
+  "<script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script></body></html>";
+  const w=window.open("","_blank"); if(!w){ alert("Please allow pop-ups to open the summary."); return; }
+  w.document.write(H); w.document.close();
+}
 function applyData(out){
   const A=window.CK.CKPipeline.mapAgents(out);
   liveYield=A.liveYield; liveProd=A.liveProd; liveOrder=A.liveOrder; liveLog=null;
@@ -3365,7 +3443,7 @@ function applyData(out){
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
   window.__OUT__=out;
   if(typeof setLoadState==="function") setLoadState("");
-  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderWastage(out); renderDetails();
+  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderWastage(out); renderMoM(); renderDetails();
   const m=out.meta||{};
   const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
   const di=document.getElementById("dataInfo");
@@ -3455,6 +3533,7 @@ async function ckProcessUploaded(list){
     } else { status.innerHTML+=' <span style="color:var(--amber)">· (Supabase not connected)</span>'; }
   }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'; console.error(err); }
 }
+(function(){ const bs=document.getElementById("btnSummary"); if(bs) bs.addEventListener("click", openSummary); })();
 document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
 document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
 document.getElementById("periodToggle").addEventListener("click",function(e){
