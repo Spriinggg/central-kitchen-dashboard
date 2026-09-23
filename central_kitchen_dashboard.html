@@ -230,6 +230,10 @@
       <p class="card-title">📦 Weekly auto-order</p>
       <div id="orderList"></div>
     </div>
+    <div class="card">
+      <p class="card-title">💰 Cost overview (RM)</p>
+      <div id="costList"></div>
+    </div>
   </div>
 
   <div class="card" style="margin-top:14px;">
@@ -297,7 +301,7 @@
 
   // ---- parse uploaded files into a mergeable raw intermediate ----
   function parseFiles(files) {
-    const raw = { mvKeys:{}, movements: [], openings:{}, closings:{}, openTitle:null, closeTitle:null, jobRows:[], jobKeys:{}, wasteRows:[], wasteKeys:{} };
+    const raw = { mvKeys:{}, movements: [], openings:{}, closings:{}, openTitle:null, closeTitle:null, jobRows:[], jobKeys:{}, wasteRows:[], wasteKeys:{}, costs:{} };
     files.forEach(f => f.sheets.forEach(sh => {
       const rows = sh.rows || [];
       let hi = 0;
@@ -313,7 +317,7 @@
         body.forEach(v => { if (!v || typeof v[0] !== "string") return; const k=v.join("\u0001"); if(raw.mvKeys[k])return; raw.mvKeys[k]=1; raw.movements.push(v); });
       } else if (kind === "balance") {
         const d = dateOf(title); const t = {};
-        body.forEach(v => { if (v[0] && v[7] != null) t[v[7] + "\u0001" + v[0]] = numf(v[8]); });
+        body.forEach(v => { if (v[0] && v[7] != null){ const k=v[7]+"\u0001"+v[0]; t[k]=numf(v[8]); const c=numf(v[10]); if(c) raw.costs[k]=c; } });
         mergeBalance(raw, t, title, d);
       } else if (kind === "job_variance") {
         body.forEach(v => { if(!v||!v[0])return; const k=String(v[0]); if(raw.jobKeys[k])return; raw.jobKeys[k]=1; raw.jobRows.push(v); });
@@ -340,11 +344,12 @@
   // ---- merge two raw intermediates (accumulate) ----
   function mergeRaw(a, b) {
     if (!a) return b; if (!b) return a;
-    const out = { mvKeys:{}, movements: [], openings:{}, closings:{}, openTitle:null, closeTitle:null, jobRows:[], jobKeys:{}, wasteRows:[], wasteKeys:{} };
+    const out = { mvKeys:{}, movements: [], openings:{}, closings:{}, openTitle:null, closeTitle:null, jobRows:[], jobKeys:{}, wasteRows:[], wasteKeys:{}, costs:{} };
     [a,b].forEach(src => {
       (src.movements||[]).forEach(v=>{ const k=v.join("\u0001"); if(out.mvKeys[k])return; out.mvKeys[k]=1; out.movements.push(v); });
       (src.jobRows||[]).forEach(v=>{ const k=String(v[0]); if(out.jobKeys[k])return; out.jobKeys[k]=1; out.jobRows.push(v); });
       (src.wasteRows||[]).forEach(v=>{ const k=String(v[1]||v.join("\u0001")); if(out.wasteKeys[k])return; out.wasteKeys[k]=1; out.wasteRows.push(v); });
+      Object.keys(src.costs||{}).forEach(k=>{ out.costs[k]=src.costs[k]; });
     });
     // balances: earliest opening, latest closing (dates recomputed from titles — JSON-safe)
     [ [a.openTitle,a.openings], [b.openTitle,b.openings] ].forEach(([t,tbl])=>{ if(t && tbl && Object.keys(tbl).length) mergeBalance(out, tbl, t, dateOf(t)); });
@@ -375,9 +380,15 @@
       const op=raw.openings[a.storage+"\u0001"+a.code];
       const closing=Math.round(((op||0)+a.received+a.adj_in+a.other_in-a.production-a.dispatch-a.adj_out-a.other_out)*10)/10;
       const actual=raw.closings[a.storage+"\u0001"+a.code];
+      const cost=(raw.costs||{})[a.storage+"\u0001"+a.code]||0;
+      const stockQty=(actual!=null?actual:closing);
       return {storage:a.storage,code:a.code,name:a.name,category:a.cat,uom:a.uom,opening:op==null?null:op,
         received:r1(a.received),production_used:r1(a.production),dispatched:r1(a.dispatch),
-        computed_closing:closing,actual_closing:actual==null?null:actual};
+        computed_closing:closing,actual_closing:actual==null?null:actual,
+        avg_cost:cost,
+        stock_value:Math.round(stockQty*cost*100)/100,
+        consumed_value:Math.round(a.production*cost*100)/100,
+        received_value:Math.round(a.received*cost*100)/100};
     });
     let matched=0,checked=0;
     items.forEach(i=>{if(i.actual_closing!=null){checked++;if(Math.abs(i.actual_closing-i.computed_closing)<=Math.max(1,Math.abs(i.actual_closing)*0.01))matched++;}});
@@ -401,7 +412,12 @@
     const weekly={days:wkKeys.map(k=>k.slice(5)),produced:wkKeys.map(k=>Math.round(wk[k].produced)),sold:wkKeys.map(k=>Math.round(wk[k].expected)),
       waste:wkKeys.map(k=>Math.round((wk[k].wasteCost||0)*100)/100),variance:wkKeys.map(k=>wk[k].expected?Math.round((wk[k].produced-wk[k].expected)/wk[k].expected*1000)/10:0)};
 
-    return { meta:{date_from:iso(dmin),date_to:iso(dmax),unique_rows:(raw.movements||[]).length,item_count:items.length,
+    const ck=items.filter(i=>i.storage==="CK KL RAW MATERIAL");
+    const sum=(arr,f)=>Math.round(arr.reduce((s,x)=>s+(x[f]||0),0)*100)/100;
+    const cost={ stock_value:sum(ck,"stock_value"), consumed_value:sum(ck,"consumed_value"), received_value:sum(ck,"received_value"), waste_cost:wasteCost,
+      top_consumed: ck.filter(i=>i.consumed_value>0).sort((a,b)=>b.consumed_value-a.consumed_value).slice(0,8).map(i=>({name:i.name,uom:i.uom,value:i.consumed_value,qty:i.production_used})) };
+
+    return { cost, meta:{date_from:iso(dmin),date_to:iso(dmax),unique_rows:(raw.movements||[]).length,item_count:items.length,
         movement_types:types,validation_matched:matched,validation_total:checked,
         validation_match_pct:checked?Math.round(matched/checked*1000)/10:null,opening_source:raw.openTitle,closing_source:raw.closeTitle},
       items, production:{jobs,products}, wastage:{records:waste,total_cost:wasteCost}, weekly };
@@ -435,7 +451,28 @@
     return { liveYield, liveAlerts, liveProd, liveOrder, weekly: out.weekly, pktPending: true, meta: out.meta, items: out.items };
   }
 
-  root.CKPipeline = { parseFiles, mergeRaw, build, processFiles, mapAgents, classify };
+  // ---- CK GRN: recipe (expected) vs actual raw consumption ----
+  function toGrams(q,u){ u=(u||"").toUpperCase(); if(u==="KG")return q*1000; if(u==="GM"||u==="G")return q; if(u==="L"||u==="LTR")return q*1000; if(u==="ML")return q; return null; }
+  function nkey(s){ return String(s).toLowerCase().replace(/[^a-z0-9]/g,""); }
+  function recipeVariance(out, recipeStd, prodMap){
+    if(!recipeStd||!recipeStd.length) return [];
+    const recBy={}; recipeStd.forEach(r=>recBy[nkey(r.name)]=r);
+    const p2r={}; (prodMap||[]).forEach(m=>{ p2r[nkey(m.product)]=m.recipe; });
+    function findRecipe(pn){ const rn=p2r[nkey(pn)]; if(!rn) return null; let r=recBy[nkey(rn)]; if(r) return r; const nr=nkey(rn); for(const k in recBy){ if(k.indexOf(nr)>=0||nr.indexOf(k)>=0) return recBy[k]; } return null; }
+    const exp={};
+    (out.production.products||[]).forEach(p=>{ const r=findRecipe(p.product); if(!r) return;
+      (r.ingredients||[]).forEach(i=>{ const g=toGrams(i.per_unit,i.unit); if(g==null) return; const k=nkey(i.name); (exp[k]=exp[k]||{name:i.name,g:0}).g += (p.actual||0)*g; }); });
+    const act={};
+    (out.items||[]).filter(i=>i.storage==="CK KL RAW MATERIAL").forEach(i=>{ const g=toGrams(i.production_used,i.uom); if(g==null) return; act[nkey(i.name)]={name:i.name,g:g,uom:i.uom}; });
+    const rows=[];
+    Object.keys(exp).forEach(k=>{ const e=exp[k], a=act[k]; if(!a||e.g<=0) return;
+      const v=Math.round((a.g-e.g)/e.g*1000)/10;
+      rows.push({ material:e.name, expected_kg:Math.round(e.g/100)/10, actual_kg:Math.round(a.g/100)/10, variance_pct:v }); });
+    rows.sort((a,b)=>Math.abs(b.variance_pct)-Math.abs(a.variance_pct));
+    return rows;
+  }
+
+  root.CKPipeline = { parseFiles, mergeRaw, build, processFiles, mapAgents, recipeVariance, classify };
 })(typeof module !== "undefined" ? module.exports : (window.CK = window.CK || {}));
 
 </script>
@@ -2594,6 +2631,136 @@
     }
   ]
 }</script>
+<script id="recmapdata" type="application/json">[
+  {
+    "product": "MY US BOLOGNESE SAUCE 2KG",
+    "recipe": "MY US BOLOGNESE SAUCE (500GM)"
+  },
+  {
+    "product": "MY US LARGE DOUGH",
+    "recipe": "Frozen Dough Large 380g"
+  },
+  {
+    "product": "MY US PERSONAL DOUGH",
+    "recipe": "Frozen Dough Personal 100g"
+  },
+  {
+    "product": "MY US REGULAR DOUGH",
+    "recipe": "Frozen Dough Regular 210g"
+  },
+  {
+    "product": "MARSHALL'S BURGER BUN (12 PCS/ PACKET)",
+    "recipe": "Burger Bun"
+  },
+  {
+    "product": "MARSHALL'S CO BEEF PATTY (4 PIECES/ PACKET)",
+    "recipe": "Beef Patty"
+  },
+  {
+    "product": "MY US FROZEN CHICKEN PATTY",
+    "recipe": "Chicken Patty"
+  },
+  {
+    "product": "MY US PICKLE JAM",
+    "recipe": "Pickle Jam"
+  },
+  {
+    "product": "MY US MARSHALL SAUCE",
+    "recipe": "MARSHALL'S SAUCE (500G)"
+  },
+  {
+    "product": "MY US SPICY SAUCE",
+    "recipe": "MARSHALL'S SPICY SAUCE (500G)"
+  },
+  {
+    "product": "MY US UMAMI SAUCE (SAUTEED BEEF)",
+    "recipe": "Umami Beef Sauce"
+  },
+  {
+    "product": "MARSHAL'S NACHO CHEESE SAUCE (500G)",
+    "recipe": "MARSHAL'S NACHO CHEESE SAUCE (500G)"
+  },
+  {
+    "product": "MY US BOLOGNESE SAUCE",
+    "recipe": "MY US BOLOGNESE SAUCE (500GM)"
+  },
+  {
+    "product": "MY US CARBONARA 2KG",
+    "recipe": "MY US CARBONARA 2KG"
+  },
+  {
+    "product": "MY US CHICKEN WINGS (30 PAIRS)",
+    "recipe": "Chicken Wing"
+  },
+  {
+    "product": "MY US DOUGH PREMIX",
+    "recipe": "Dough Premix"
+  },
+  {
+    "product": "MY US DUNCAN SAUCE",
+    "recipe": "MY US DUNCAN SAUCE(1KG)"
+  },
+  {
+    "product": "MY US GARLIC BUTTER",
+    "recipe": "MY US GARLIC BUTTER (1KG)"
+  },
+  {
+    "product": "MY US GROUND BEEF",
+    "recipe": "Ground Beef"
+  },
+  {
+    "product": "MY US ICE TEA PREMIX",
+    "recipe": "Ice Tea Premix"
+  },
+  {
+    "product": "MY US ITALIANO CHICKEN",
+    "recipe": "Italiano Chicken"
+  },
+  {
+    "product": "MY US ITALIAN MAYO",
+    "recipe": "MY US ITALIANO MAYO (500GM)"
+  },
+  {
+    "product": "MY US ITALIAN SAUCE",
+    "recipe": "MY US ITALIANO SAUCE (1KG)"
+  },
+  {
+    "product": "MY US LASAGNA",
+    "recipe": "MY US LASAGNA (2 PCS)"
+  },
+  {
+    "product": "MY US MUSHROOM SOUP PREMIX",
+    "recipe": "Mushroom Soup Premix"
+  },
+  {
+    "product": "MY US SALTED EGG GARLIC PASTE",
+    "recipe": "MY US SALTED EGG GARLIC PASTE (BASE) (300GM)"
+  },
+  {
+    "product": "MY US SALTED EGG SAUCE",
+    "recipe": "MY US SALTED EGG SAUCE DRESSING (300GM)"
+  },
+  {
+    "product": "MY US SPICY CHICKEN",
+    "recipe": "Spicy Chicken"
+  },
+  {
+    "product": "MY US TERIYAKI SAUCE",
+    "recipe": "MY US TERIYAKI SAUCE (300GM)"
+  },
+  {
+    "product": "MY US TOMYUM PASTE",
+    "recipe": "MY US TOMYAM PASTE (300GM)"
+  },
+  {
+    "product": "MY US CINNAMON POWDER PREMIX",
+    "recipe": "Cinnamon Sugar Premix"
+  },
+  {
+    "product": "MY US SAMBAL GEPUK",
+    "recipe": "SAMBAL GEPUK"
+  }
+]</script>
 <script>
 // ---- SAMPLE DATA (replace with Supabase queries later) ----
 const DATA = {
@@ -3089,14 +3256,38 @@ try{ if(window.supabase) SB=window.supabase.createClient(SB_URL,SB_KEY); }catch(
 let RAW=null;
 function slimRaw(raw){
   const mv=(raw.movements||[]).map(v=>{ const c=v.slice(0,15); c[5]=null;c[6]=null;c[7]=null;c[8]=null;c[13]=null; return c; });
-  return { movements:mv, openings:raw.openings, closings:raw.closings, openTitle:raw.openTitle, closeTitle:raw.closeTitle, jobRows:raw.jobRows, wasteRows:raw.wasteRows };
+  return { movements:mv, openings:raw.openings, closings:raw.closings, openTitle:raw.openTitle, closeTitle:raw.closeTitle, jobRows:raw.jobRows, wasteRows:raw.wasteRows, costs:raw.costs };
+}
+function renderCost(out){
+  const el=document.getElementById("costList"); if(!el) return;
+  const c=out.cost; if(!c){ el.innerHTML='<div class="empty">No cost data</div>'; return; }
+  const rm=n=>"RM "+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  let h='<div class="src-badge live">● from stock balance (avg cost)</div>';
+  h+='<div class="line"><span>Stock value on hand</span><span style="font-weight:600">'+rm(c.stock_value)+'</span></div>';
+  h+='<div class="line"><span>Raw consumed (production)</span><span style="font-weight:600">'+rm(c.consumed_value)+'</span></div>';
+  h+='<div class="line"><span>Waste cost</span><span style="color:var(--amber);font-weight:600">'+rm(c.waste_cost)+'</span></div>';
+  if(c.top_consumed&&c.top_consumed.length){
+    h+='<div style="margin-top:8px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;">Top consumed by value</div>';
+    c.top_consumed.slice(0,5).forEach(t=>{ h+='<div class="line"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">'+t.name+'</span><span>'+rm(t.value)+'</span></div>'; });
+  }
+  el.innerHTML=h;
 }
 function applyData(out){
   const A=window.CK.CKPipeline.mapAgents(out);
-  liveYield=A.liveYield; liveAlerts=A.liveAlerts; liveProd=A.liveProd; liveOrder=A.liveOrder; liveLog=null;
+  liveYield=A.liveYield; liveProd=A.liveProd; liveOrder=A.liveOrder; liveLog=null;
+  try{
+    const rv=window.CK.CKPipeline.recipeVariance(out, (window.__RECIPES__&&window.__RECIPES__.recipes)||[], window.__RECMAP__||[]);
+    liveAlerts = rv.map(function(r){ var av=Math.abs(r.variance_pct);
+      var sev = av>=15?"high":av>=8?"medium":"low";
+      var cause = r.variance_pct>0 ? (av>=15?"over-usage vs recipe":"slightly over recipe") : "within / under recipe";
+      return { material:r.material, cause:cause, severity:sev,
+        note:"recipe "+r.expected_kg+"kg vs actual "+r.actual_kg+"kg ("+(r.variance_pct>0?"+":"")+r.variance_pct+"%)",
+        route_to: sev==="high"?"Review / Audit":(sev==="medium"?"Training":"-") }; });
+    if(!liveAlerts.length) liveAlerts=A.liveAlerts;
+  }catch(e){ console.warn("recipe variance failed",e); liveAlerts=A.liveAlerts; }
   window.__pktPending=true;
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
-  render(); drawTrend(trendMetric); animateMetrics();
+  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out);
   const m=out.meta||{};
   const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
   const lu=document.getElementById("lastUpdated"); if(lu) lu.textContent="Live · "+(m.date_from||"")+" → "+(m.date_to||"");
