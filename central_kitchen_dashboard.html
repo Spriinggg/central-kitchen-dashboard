@@ -3219,6 +3219,13 @@ let RECIPES = [];
 let rFilter = "ALL", rQuery = "";
 const RCAT = { DOUGH:"#c47d15", MEAT:"#c0392b", PREMIX:"#7a5bb0", SAUCES:"#2f7d5b", "SIDE DISHES":"#2b7a9e" };
 
+// Populate recipe-variance globals synchronously so applyData()/recipeVariance() can use them
+// (the inline <script id="recipedata"> / "recmapdata"> elements already exist above this script).
+(function(){
+  try{ var rd=document.getElementById("recipedata"); if(rd) window.__RECIPES__=JSON.parse(rd.textContent||"{}"); }catch(e){ console.warn("recipes global init failed",e); }
+  try{ var rm=document.getElementById("recmapdata"); if(rm) window.__RECMAP__=JSON.parse(rm.textContent||"[]"); }catch(e){ console.warn("recmap global init failed",e); }
+})();
+
 async function loadRecipes() {
   try {
     const inl = JSON.parse(document.getElementById("recipedata").textContent||"{}");
