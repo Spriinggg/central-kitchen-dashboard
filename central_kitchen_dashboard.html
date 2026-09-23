@@ -3096,7 +3096,12 @@ function render() {
       banner.innerHTML = `<span style="color:var(--green)">✓ All normal today</span>`;
       banner.style.background = "var(--green-bg)";
     } else {
-      banner.innerHTML = `<span style="color:var(--red)">⚠ ${highAlerts} high alert(s) · ${mismatchCount} PKT mismatch(es) today</span>`;
+      const parts = [];
+      if (highAlerts > 0) parts.push(`${highAlerts} recipe variance alert(s)`);
+      // Only mention PKT when its data is actually connected (not pending / no access yet)
+      if (!window.__pktPending && typeof mismatchCount === "number" && mismatchCount > 0)
+        parts.push(`${mismatchCount} PKT mismatch(es)`);
+      banner.innerHTML = `<span style="color:var(--red)">⚠ ${parts.join(" · ")} today</span>`;
       banner.style.background = "var(--red-bg)";
     }
   }
