@@ -3483,7 +3483,9 @@ function renderDataInfo(){
   di.textContent=t;
 }
 // ---- PKT (USFOOD warehouse) — real WMS dispatches, MY/SG separate ----
-let PKTRAW=null, pktRegion="MY";
+let PKTRAW=null, pktRegion="MY", pktLogPage=0; const PKT_LOG_PAGE=50;
+function pktLogPrev(){ if(pktLogPage>0){ pktLogPage--; renderPKT(); } }
+function pktLogNext(){ pktLogPage++; renderPKT(); }
 window.PKT_SUMMARY=null;
 function refreshPKTSummary(){
   if(PKTRAW && PKTRAW.mvt && PKTRAW.mvt.length && window.PKT){
@@ -3517,22 +3519,31 @@ function renderPKT(){
   if(b.low && b.low.length){ h+='<div style="margin-top:8px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Low stock (≤5)</div>';
     b.low.slice(0,5).forEach(x=>{ h+='<div class="line"><span style="max-width:66%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+x.desc+'</span><span style="color:var(--red);font-weight:600">'+rm(x.avail)+' '+(x.uom||"").toLowerCase()+'</span></div>'; }); }
   h+='</div></div>';
-  h+='<div style="margin:12px 0 4px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Dispatch log ('+pktRegion+') · '+b.log.length+' line(s)</div>';
-  h+='<div style="max-height:240px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:10px;">';
+  const total=b.log.length; const pages=Math.max(1,Math.ceil(total/PKT_LOG_PAGE));
+  if(pktLogPage>=pages) pktLogPage=pages-1; if(pktLogPage<0) pktLogPage=0;
+  const start=pktLogPage*PKT_LOG_PAGE; const pageRows=b.log.slice(start,start+PKT_LOG_PAGE);
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:12px 0 6px;">';
+  h+='<span style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Dispatch log ('+pktRegion+') · '+total+' line(s)</span>';
+  h+='<span style="display:flex;align-items:center;gap:8px;font-size:12px;">'+
+     '<button onclick="pktLogPrev()" class="nav-btn" style="cursor:pointer;padding:3px 11px;'+(pktLogPage<=0?'opacity:.35;pointer-events:none;':'')+'">◀ Prev</button>'+
+     '<span style="color:var(--text-soft);white-space:nowrap">'+(total?(start+1):0)+'–'+Math.min(start+PKT_LOG_PAGE,total)+' / '+total+'</span>'+
+     '<button onclick="pktLogNext()" class="nav-btn" style="cursor:pointer;padding:3px 11px;'+(pktLogPage>=pages-1?'opacity:.35;pointer-events:none;':'')+'">Next ▶</button>'+
+     '</span></div>';
+  h+='<div style="max-height:340px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:10px;">';
   h+='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>'+
      '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Date</th>'+
      '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Outlet</th>'+
      '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Item</th>'+
      '<th style="text-align:right;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Qty</th>'+
      '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">DO</th></tr></thead><tbody>';
-  b.log.slice(0,150).forEach(l=>{ h+='<tr>'+
+  pageRows.forEach(l=>{ h+='<tr>'+
     '<td style="padding:4px 8px;border-top:1px solid var(--glass-border)">'+(l.date||"")+'</td>'+
     '<td style="padding:4px 8px;border-top:1px solid var(--glass-border)">'+l.outlet+'</td>'+
     '<td style="padding:4px 8px;border-top:1px solid var(--glass-border);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+l.desc+'</td>'+
     '<td style="padding:4px 8px;border-top:1px solid var(--glass-border);text-align:right">'+rm(l.out)+'</td>'+
     '<td style="padding:4px 8px;border-top:1px solid var(--glass-border);color:var(--text-mut)">'+l.doc+'</td></tr>'; });
+  if(!pageRows.length) h+='<tr><td colspan="5" style="padding:10px;text-align:center;color:var(--text-mut)">No dispatches</td></tr>';
   h+='</tbody></table></div>';
-  if(b.log.length>150) h+='<div style="font-size:10.5px;color:var(--text-mut);margin-top:4px">Showing first 150 of '+b.log.length+' lines</div>';
   el.innerHTML=h;
 }
 function applyData(out){
@@ -3660,7 +3671,7 @@ async function ckProcessUploaded(list){
   }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'; console.error(err); }
 }
 (function(){ const bs=document.getElementById("btnSummary"); if(bs) bs.addEventListener("click", openSummary); })();
-(function(){ const t=document.getElementById("pktRegionToggle"); if(t) t.addEventListener("click",function(e){ const r=e.target.dataset.reg; if(!r)return; pktRegion=r; t.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.reg===r)); renderPKT(); }); })();
+(function(){ const t=document.getElementById("pktRegionToggle"); if(t) t.addEventListener("click",function(e){ const r=e.target.dataset.reg; if(!r)return; pktRegion=r; pktLogPage=0; t.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.reg===r)); renderPKT(); }); })();
 document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
 document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
 document.getElementById("periodToggle").addEventListener("click",function(e){
