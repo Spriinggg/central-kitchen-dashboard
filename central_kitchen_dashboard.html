@@ -169,6 +169,7 @@
   </div>
 
   <div id="view-dashboard">
+  <div id="loadState" style="display:none;text-align:center;padding:14px 16px;margin-bottom:16px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-border);font-size:13px;color:var(--text-soft);"></div>
   <div class="card" id="uploadPanel" style="margin-bottom:16px;">
     <p class="card-title">⬆️ Upload ERP data</p>
     <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 12px;">Drop the ERP Excel exports — processed in your browser and saved to Supabase (shared). Add new files anytime — data accumulates, it does not wipe. Needed: Stock Movement (Raw Materials) chunks, Stock Balance (opening + closing), Job Production Variance (Output), Wastage Report.</p>
@@ -3312,6 +3313,7 @@ function applyData(out){
   window.__pktPending=true;
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
   window.__OUT__=out;
+  if(typeof setLoadState==="function") setLoadState("");
   render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderDetails();
   const m=out.meta||{};
   const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
@@ -3323,6 +3325,7 @@ function applyData(out){
 function nkeyJS(s){ return String(s).toLowerCase().replace(/[^a-z0-9]/g,""); }
 let detSort={key:"value",dir:-1};
 function renderDetails(){
+  const fmt=n=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
   const out=window.__OUT__; const tb=document.querySelector("#detTable tbody"); if(!tb) return;
   if(!out){ tb.innerHTML='<tr><td colspan="7" class="empty">No data yet — upload files</td></tr>'; return; }
   const rvmap=window.__RVMAP__||{};
@@ -3425,7 +3428,14 @@ async function loadFromSupabase(){
   return false;
 }
 let __inited=false;
-async function initApp(){ if(__inited) return; __inited=true; const ok=await loadFromSupabase(); if(!ok){ loadLive(); drawTrend(trendMetric); } }
+function setLoadState(msg){ const el=document.getElementById("loadState"); if(!el) return; if(msg){ el.textContent=msg; el.style.display=""; } else { el.style.display="none"; } }
+async function initApp(){
+  if(__inited) return; __inited=true;
+  setLoadState("Loading data…");                 // show while Supabase loads (no fake sample)
+  const ok=await loadFromSupabase();
+  if(ok){ setLoadState(""); }
+  else { setLoadState("No data loaded yet — upload the ERP files below to populate the dashboard."); }
+}
 function showApp(){ document.getElementById("loginOverlay").style.display="none"; const w=document.querySelector(".wrap"); if(w) w.style.display=""; initApp(); }
 function showLogin(){ document.getElementById("loginOverlay").style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
 const _lf=document.getElementById("loginForm");
