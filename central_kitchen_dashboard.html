@@ -164,6 +164,7 @@
 
   <div class="nav" id="nav">
     <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+    <button class="nav-btn" data-view="details">Details</button>
     <button class="nav-btn" data-view="recipes">Recipes</button>
   </div>
 
@@ -251,6 +252,26 @@
 
   <p class="foot">Sample data for prototype only · not real numbers · buttons are live</p>
   </div><!-- /view-dashboard -->
+
+  <div id="view-details" style="display:none;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+      <input id="detSearch" type="text" placeholder="Search material…" style="font-size:13px;padding:9px 14px;border-radius:20px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.6);min-width:220px;outline:none;">
+      <span id="detCount" style="font-size:12px;color:var(--text-soft);"></span>
+      <button id="detExport" class="nav-btn" style="margin-left:auto;cursor:pointer;font-size:12px;padding:6px 14px;">⬇ Export CSV</button>
+    </div>
+    <div class="card" style="overflow-x:auto;">
+      <table id="detTable">
+        <thead><tr>
+          <th>Material</th><th>UOM</th>
+          <th class="num">Received</th><th class="num">Consumed</th>
+          <th class="num">Stock</th><th class="num">Value (RM)</th>
+          <th class="num">Recipe var%</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="foot">All Central Kitchen materials · click a column header to sort · search to filter</p>
+  </div><!-- /view-details -->
 
   <div id="view-recipes" style="display:none;">
     <div class="rbar">
@@ -3187,7 +3208,9 @@ document.getElementById("nav").addEventListener("click", e => {
   document.querySelectorAll("#nav .nav-btn").forEach(b => b.classList.toggle("active", b===e.target));
   document.getElementById("view-dashboard").style.display = v==="dashboard" ? "" : "none";
   document.getElementById("view-recipes").style.display = v==="recipes" ? "" : "none";
+  const vd=document.getElementById("view-details"); if(vd) vd.style.display = v==="details" ? "" : "none";
   if (v==="recipes" && !RECIPES.length) loadRecipes();
+  if (v==="details") renderDetails();
 });
 
 // ---- RECIPES view ----
@@ -3277,6 +3300,7 @@ function applyData(out){
   liveYield=A.liveYield; liveProd=A.liveProd; liveOrder=A.liveOrder; liveLog=null;
   try{
     const rv=window.CK.CKPipeline.recipeVariance(out, (window.__RECIPES__&&window.__RECIPES__.recipes)||[], window.__RECMAP__||[]);
+    window.__RVMAP__={}; rv.forEach(function(r){ window.__RVMAP__[nkeyJS(r.material)]=r.variance_pct; });
     liveAlerts = rv.map(function(r){ var av=Math.abs(r.variance_pct);
       var sev = av>=15?"high":av>=8?"medium":"low";
       var cause = r.variance_pct>0 ? (av>=15?"over-usage vs recipe":"slightly over recipe") : "within / under recipe";
@@ -3287,13 +3311,53 @@ function applyData(out){
   }catch(e){ console.warn("recipe variance failed",e); liveAlerts=A.liveAlerts; }
   window.__pktPending=true;
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
-  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out);
+  window.__OUT__=out;
+  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderDetails();
   const m=out.meta||{};
   const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
   const lu=document.getElementById("lastUpdated"); if(lu) lu.textContent="Live · "+(m.date_from||"")+" → "+(m.date_to||"");
   const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia · live from ERP exports";
   return m;
 }
+// ---- DETAILS (full material table) ----
+function nkeyJS(s){ return String(s).toLowerCase().replace(/[^a-z0-9]/g,""); }
+let detSort={key:"value",dir:-1};
+function renderDetails(){
+  const out=window.__OUT__; const tb=document.querySelector("#detTable tbody"); if(!tb) return;
+  if(!out){ tb.innerHTML='<tr><td colspan="7" class="empty">No data yet — upload files</td></tr>'; return; }
+  const rvmap=window.__RVMAP__||{};
+  let rows=(out.items||[]).filter(i=>i.storage==="CK KL RAW MATERIAL").map(i=>({
+    name:i.name, uom:i.uom||"", received:i.received||0, consumed:i.production_used||0,
+    stock:(i.actual_closing!=null?i.actual_closing:i.computed_closing)||0,
+    value:i.consumed_value||0, varpct: (rvmap[nkeyJS(i.name)]!=null?rvmap[nkeyJS(i.name)]:null) }));
+  const q=(document.getElementById("detSearch").value||"").toLowerCase();
+  if(q) rows=rows.filter(r=>r.name.toLowerCase().indexOf(q)>=0);
+  const k=detSort.key, d=detSort.dir;
+  rows.sort((a,b)=>{ let x=a[k],y=b[k]; if(k==="name"||k==="uom"){ return d*String(x).localeCompare(String(y)); } x=(x==null?-1e15:x); y=(y==null?-1e15:y); return d*(x-y); });
+  document.getElementById("detCount").textContent=rows.length+" materials";
+  tb.innerHTML = rows.length ? rows.map(r=>{
+    const vc = r.varpct==null?"":(Math.abs(r.varpct)>=15?' style="color:var(--red);font-weight:600"':(Math.abs(r.varpct)>=8?' style="color:var(--amber)"':''));
+    const vtxt = r.varpct==null?"–":((r.varpct>0?"+":"")+r.varpct+"%");
+    return "<tr><td>"+r.name+"</td><td>"+r.uom+"</td>"+
+      '<td class="num">'+fmt(r.received)+'</td><td class="num">'+fmt(r.consumed)+'</td>'+
+      '<td class="num">'+fmt(r.stock)+'</td><td class="num">'+fmt(r.value)+'</td>'+
+      '<td class="num"'+vc+">"+vtxt+"</td></tr>"; }).join("") : '<tr><td colspan="7" class="empty">No match</td></tr>';
+  window.__DETROWS__=rows;
+}
+(function(){
+  const s=document.getElementById("detSearch"); if(s) s.addEventListener("input", renderDetails);
+  const heads=["name","uom","received","consumed","stock","value","varpct"];
+  const ths=document.querySelectorAll("#detTable thead th");
+  ths.forEach((th,idx)=>{ th.style.cursor="pointer"; th.addEventListener("click",()=>{ const k=heads[idx]; if(detSort.key===k) detSort.dir*=-1; else detSort={key:k,dir:(k==="name"||k==="uom")?1:-1}; renderDetails(); }); });
+  const ex=document.getElementById("detExport");
+  if(ex) ex.addEventListener("click",()=>{
+    const rows=window.__DETROWS__||[]; if(!rows.length) return;
+    const head=["Material","UOM","Received","Consumed","Stock","Value_RM","Recipe_Var_%"];
+    const csv=[head.join(",")].concat(rows.map(r=>['"'+r.name.replace(/"/g,'""')+'"',r.uom,r.received,r.consumed,r.stock,r.value,(r.varpct==null?"":r.varpct)].join(","))).join("\n");
+    const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download="central_kitchen_materials.csv"; a.click(); URL.revokeObjectURL(a.href);
+  });
+})();
 // ---- PERIOD / DATE-RANGE ----
 let CURRENT_RANGE=null, FULL_MAX=null;
 function fmtD(d){ try{ return d? (d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")):""; }catch(e){ return ""; } }
