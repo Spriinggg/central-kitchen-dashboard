@@ -3373,13 +3373,25 @@ if(_lf) _lf.addEventListener("submit", async function(e){
   if(!SB){ err.style.color="var(--red)"; err.textContent="Supabase not connected."; return; }
   const {error}=await SB.auth.signInWithPassword({email:em,password:pw});
   if(error){ err.style.color="var(--red)"; err.textContent=error.message; }
-  else { err.textContent=""; showApp(); }
+  else { err.textContent=""; showApp(); resetIdle(); }
 });
+async function doSignOut(reason){ try{ if(SB) await SB.auth.signOut(); }catch(e){} location.reload(); }
 const _lo=document.getElementById("logoutBtn");
-if(_lo) _lo.addEventListener("click", async function(){ if(SB) await SB.auth.signOut(); location.reload(); });
+if(_lo) _lo.addEventListener("click", function(){ doSignOut("manual"); });
+
+// ---- AUTO-LOGOUT AFTER 30 MIN IDLE ----
+const IDLE_MS=30*60*1000;
+let __idleTimer=null;
+function resetIdle(){
+  if(document.getElementById("loginOverlay").style.display!=="none") return; // only when logged in
+  clearTimeout(__idleTimer);
+  __idleTimer=setTimeout(function(){ doSignOut("idle"); }, IDLE_MS);
+}
+["click","keydown","mousemove","scroll","touchstart"].forEach(function(ev){ document.addEventListener(ev, resetIdle, {passive:true}); });
+
 (async function(){
-  if(!SB){ showApp(); return; }               // fallback if auth lib missing
-  try{ const {data}=await SB.auth.getSession(); if(data && data.session){ showApp(); } else { showLogin(); } }
+  if(!SB){ showApp(); resetIdle(); return; }   // fallback if auth lib missing
+  try{ const {data}=await SB.auth.getSession(); if(data && data.session){ showApp(); resetIdle(); } else { showLogin(); } }
   catch(e){ showLogin(); }
 })();
 </script>
