@@ -3295,8 +3295,12 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let SB=null;
 try{ if(window.supabase) SB=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ console.warn("supabase init failed",e); }
 let RAW=null;
-let CURRENT_USER="";      // email of the signed-in user (for "uploaded by")
+let CURRENT_USER="";      // display name (or email) of the signed-in user (for "uploaded by")
 let UPLOAD_INFO=null;     // {by, at} of the last upload that populated the shared data
+// Prefer a Supabase display name (set in Authentication → Users → User Metadata:
+// full_name / name / display_name); fall back to email if none is set.
+function userLabel(u){ if(!u) return ""; const md=u.user_metadata||{};
+  return md.full_name || md.name || md.display_name || u.email || ""; }
 function slimRaw(raw){
   const mv=(raw.movements||[]).map(v=>{ const c=v.slice(0,15); c[5]=null;c[6]=null;c[7]=null;c[8]=null;c[13]=null; return c; });
   return { movements:mv, openings:raw.openings, closings:raw.closings, openTitle:raw.openTitle, closeTitle:raw.closeTitle, jobRows:raw.jobRows, wasteRows:raw.wasteRows, costs:raw.costs };
@@ -3503,7 +3507,7 @@ if(_lf) _lf.addEventListener("submit", async function(e){
   if(!SB){ err.style.color="var(--red)"; err.textContent="Supabase not connected."; return; }
   const {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
   if(error){ err.style.color="var(--red)"; err.textContent=error.message; }
-  else { CURRENT_USER=(data&&data.user&&data.user.email)||em; err.textContent=""; showApp(); resetIdle(); }
+  else { CURRENT_USER=userLabel(data&&data.user)||em; err.textContent=""; showApp(); resetIdle(); }
 });
 async function doSignOut(reason){ try{ if(SB) await SB.auth.signOut(); }catch(e){} location.reload(); }
 const _lo=document.getElementById("logoutBtn");
@@ -3521,7 +3525,7 @@ function resetIdle(){
 
 (async function(){
   if(!SB){ showApp(); resetIdle(); return; }   // fallback if auth lib missing
-  try{ const {data}=await SB.auth.getSession(); if(data && data.session){ CURRENT_USER=(data.session.user&&data.session.user.email)||""; showApp(); resetIdle(); } else { showLogin(); } }
+  try{ const {data}=await SB.auth.getSession(); if(data && data.session){ CURRENT_USER=userLabel(data.session.user); showApp(); resetIdle(); } else { showLogin(); } }
   catch(e){ showLogin(); }
 })();
 </script>
