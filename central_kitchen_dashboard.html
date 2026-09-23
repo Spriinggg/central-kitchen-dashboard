@@ -3472,6 +3472,16 @@ function openSummary(){
   const w=window.open("","_blank"); if(!w){ alert("Please allow pop-ups to open the summary."); return; }
   w.document.write(H); w.document.close();
 }
+// ---- header "uploaded by / when" — reflects the most recent upload (CK or PKT) ----
+function noteUpload(by,at){ if(!at) return; if(!UPLOAD_INFO || !UPLOAD_INFO.at || new Date(at)>=new Date(UPLOAD_INFO.at)){ UPLOAD_INFO={by:by||"",at:at}; } }
+function renderDataInfo(){
+  const di=document.getElementById("dataInfo"); if(!di) return;
+  const m=(window.__OUT__&&window.__OUT__.meta)||{};
+  let t = m.date_from ? ("Live · "+(m.date_from||"")+" → "+(m.date_to||"")) : "";
+  if(UPLOAD_INFO&&UPLOAD_INFO.at){ let dt=""; try{ const d=new Date(UPLOAD_INFO.at); dt=d.toLocaleDateString(undefined,{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); }catch(e){}
+    t += (t?" · ":"")+"uploaded "+dt+(UPLOAD_INFO.by?(" by "+UPLOAD_INFO.by):""); }
+  di.textContent=t;
+}
 // ---- PKT (USFOOD warehouse) — real WMS dispatches, MY/SG separate ----
 let PKTRAW=null, pktRegion="MY";
 window.PKT_SUMMARY=null;
@@ -3545,11 +3555,7 @@ function applyData(out){
   render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderWastage(out); renderMoM(); renderDetails();
   const m=out.meta||{};
   const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
-  const di=document.getElementById("dataInfo");
-  if(di){ let t="Live · "+(m.date_from||"")+" → "+(m.date_to||"");
-    if(UPLOAD_INFO&&UPLOAD_INFO.at){ let dt=""; try{ const d=new Date(UPLOAD_INFO.at); dt=d.toLocaleDateString(undefined,{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); }catch(e){}
-      t+=" · uploaded "+dt+(UPLOAD_INFO.by?(" by "+UPLOAD_INFO.by):""); }
-    di.textContent=t; }
+  renderDataInfo();
   const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia · live from ERP exports";
   return m;
 }
@@ -3627,7 +3633,7 @@ async function ckProcessUploaded(list){
       parts.push("CK: "+(m.unique_rows||0).toLocaleString()+" movements · "+m.item_count+" items · "+m.date_from+" → "+m.date_to+" · verified "+m.validation_match_pct+"%");
       if(SB){
         const pl=slimRaw(RAW); pl.__uploadedBy=CURRENT_USER||""; pl.__uploadedAt=nowIso;
-        UPLOAD_INFO={by:pl.__uploadedBy, at:pl.__uploadedAt};
+        noteUpload(pl.__uploadedBy, pl.__uploadedAt);
         const {error}=await SB.from("ck_state").upsert({id:"latest",payload:pl,updated_at:nowIso});
         if(!error){ rebuild(); } else parts.push("⚠ CK save failed: "+error.message);
       }
@@ -3642,6 +3648,7 @@ async function ckProcessUploaded(list){
       parts.push("PKT: MY "+(my?my.totalOut:0)+" units/"+(my?my.outletCount:0)+" outlets · SG "+(sg?sg.totalOut:0)+" · dates "+(my?my.dateFrom:"")+"→"+(my?my.dateTo:""));
       if(SB){
         PKTRAW.__uploadedBy=CURRENT_USER||""; PKTRAW.__uploadedAt=nowIso;
+        noteUpload(PKTRAW.__uploadedBy, PKTRAW.__uploadedAt); renderDataInfo();
         const {error}=await SB.from("ck_state").upsert({id:"pkt",payload:PKTRAW,updated_at:nowIso});
         if(error) parts.push("⚠ PKT save failed: "+error.message);
       }
@@ -3677,7 +3684,7 @@ async function loadFromSupabase(){
     if(error) throw error;
     if(data && data.payload && data.payload.movements){
       RAW=data.payload;
-      if(RAW.__uploadedAt) UPLOAD_INFO={by:RAW.__uploadedBy||"", at:RAW.__uploadedAt};
+      if(RAW.__uploadedAt) noteUpload(RAW.__uploadedBy||"", RAW.__uploadedAt);
       setDefaultRange(); rebuild();
       const full=window.CK.CKPipeline.build(RAW).meta;
       const s=document.getElementById("ckStatus"); if(s) s.innerHTML='<span style="color:var(--green)">✓ Loaded shared data · '+full.date_from+' → '+full.date_to+'. Upload more files to add to it.</span>';
@@ -3693,6 +3700,8 @@ async function loadPKTFromSupabase(){
     if(error) throw error;
     if(data && data.payload && data.payload.mvt){
       PKTRAW=data.payload; refreshPKTSummary(); renderPKT(); if(typeof render==="function") render();
+      if(PKTRAW.__uploadedAt) noteUpload(PKTRAW.__uploadedBy||"", PKTRAW.__uploadedAt);
+      renderDataInfo();
       return true;
     }
   }catch(e){ console.warn("pkt load failed",e); }
