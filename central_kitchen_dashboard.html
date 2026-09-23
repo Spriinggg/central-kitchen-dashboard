@@ -156,8 +156,9 @@
         <p class="subtitle">dough &amp; logistics · today</p>
       </div>
     </div>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <span id="lastUpdated" style="font-size:12px; color:var(--text-soft); white-space:nowrap;">Updated —</span>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end;">
+      <span id="dataInfo" style="font-size:12px; color:var(--text-soft);"></span>
+      <span id="lastUpdated" style="font-size:12px; color:var(--text-mut); white-space:nowrap;">Updated —</span>
       <button id="logoutBtn" class="nav-btn" style="cursor:pointer;font-size:12px;padding:5px 12px;">Sign out</button>
     </div>
   </div>
@@ -3363,11 +3364,11 @@ function applyData(out){
   render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderWastage(out); renderDetails();
   const m=out.meta||{};
   const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
-  const lu=document.getElementById("lastUpdated");
-  if(lu){ let t="Live · "+(m.date_from||"")+" → "+(m.date_to||"");
+  const di=document.getElementById("dataInfo");
+  if(di){ let t="Live · "+(m.date_from||"")+" → "+(m.date_to||"");
     if(UPLOAD_INFO&&UPLOAD_INFO.at){ let dt=""; try{ const d=new Date(UPLOAD_INFO.at); dt=d.toLocaleDateString(undefined,{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); }catch(e){}
       t+=" · uploaded "+dt+(UPLOAD_INFO.by?(" by "+UPLOAD_INFO.by):""); }
-    lu.textContent=t; }
+    di.textContent=t; }
   const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia · live from ERP exports";
   return m;
 }
