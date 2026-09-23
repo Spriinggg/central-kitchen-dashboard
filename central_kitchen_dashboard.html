@@ -236,6 +236,10 @@
       <p class="card-title">💰 Cost overview (RM)</p>
       <div id="costList"></div>
     </div>
+    <div class="card">
+      <p class="card-title">🗑️ Wastage detail (by cost)</p>
+      <div id="wasteList"></div>
+    </div>
   </div>
 
   <div class="card" style="margin-top:14px;">
@@ -3290,6 +3294,8 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let SB=null;
 try{ if(window.supabase) SB=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ console.warn("supabase init failed",e); }
 let RAW=null;
+let CURRENT_USER="";      // email of the signed-in user (for "uploaded by")
+let UPLOAD_INFO=null;     // {by, at} of the last upload that populated the shared data
 function slimRaw(raw){
   const mv=(raw.movements||[]).map(v=>{ const c=v.slice(0,15); c[5]=null;c[6]=null;c[7]=null;c[8]=null;c[13]=null; return c; });
   return { movements:mv, openings:raw.openings, closings:raw.closings, openTitle:raw.openTitle, closeTitle:raw.closeTitle, jobRows:raw.jobRows, wasteRows:raw.wasteRows, costs:raw.costs };
@@ -3306,6 +3312,34 @@ function renderCost(out){
     h+='<div style="margin-top:8px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;">Top consumed by value</div>';
     c.top_consumed.slice(0,5).forEach(t=>{ h+='<div class="line"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">'+t.name+'</span><span>'+rm(t.value)+'</span></div>'; });
   }
+  el.innerHTML=h;
+}
+function renderWastage(out){
+  const el=document.getElementById("wasteList"); if(!el) return;
+  const recs=(out.wastage&&out.wastage.records)||[];
+  if(!recs.length){ el.innerHTML='<div class="empty">No wastage records in this period</div>'; return; }
+  const rm=n=>"RM "+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:2});
+  const rows=recs.map(w=>({item:w.item||"—",qty:Number(w.qty)||0,uom:(w.uom||"").toLowerCase(),reason:w.reason||"—",cost:Number(w.cost)||0}))
+    .sort((a,b)=>b.cost-a.cost);
+  const total=rows.reduce((s,w)=>s+w.cost,0);
+  // group by reason for a quick "cause" summary
+  const byReason={}; rows.forEach(w=>{ const k=w.reason||"—"; byReason[k]=(byReason[k]||0)+w.cost; });
+  const causes=Object.keys(byReason).sort((a,b)=>byReason[b]-byReason[a]).slice(0,4);
+  let h='<div class="src-badge live">● from wastage report</div>';
+  h+='<div class="line"><span style="font-weight:600">Total waste</span><span style="color:var(--amber);font-weight:600">'+rm(total)+' · '+rows.length+' record(s)</span></div>';
+  if(causes.length){
+    h+='<div style="margin:6px 0 2px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;">Top causes</div>';
+    causes.forEach(c=>{ h+='<div class="line"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">'+c+'</span><span>'+rm(byReason[c])+'</span></div>'; });
+  }
+  h+='<div style="margin:8px 0 2px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;">Items</div>';
+  h+='<div style="max-height:190px;overflow-y:auto;">';
+  rows.slice(0,40).forEach(w=>{
+    h+='<div class="line" style="align-items:flex-start"><span style="max-width:62%"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">'+w.item+'</span>'+
+       '<span style="font-size:10.5px;color:var(--text-mut)">'+(w.qty?w.qty+' '+w.uom+' · ':'')+w.reason+'</span></span>'+
+       '<span style="color:var(--amber);font-weight:600;white-space:nowrap">'+rm(w.cost)+'</span></div>';
+  });
+  h+='</div>';
+  if(rows.length>40) h+='<div style="font-size:10.5px;color:var(--text-mut);margin-top:4px">+ '+(rows.length-40)+' more — see Details / export</div>';
   el.innerHTML=h;
 }
 function applyData(out){
@@ -3326,10 +3360,14 @@ function applyData(out){
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
   window.__OUT__=out;
   if(typeof setLoadState==="function") setLoadState("");
-  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderDetails();
+  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderWastage(out); renderDetails();
   const m=out.meta||{};
   const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
-  const lu=document.getElementById("lastUpdated"); if(lu) lu.textContent="Live · "+(m.date_from||"")+" → "+(m.date_to||"");
+  const lu=document.getElementById("lastUpdated");
+  if(lu){ let t="Live · "+(m.date_from||"")+" → "+(m.date_to||"");
+    if(UPLOAD_INFO&&UPLOAD_INFO.at){ let dt=""; try{ const d=new Date(UPLOAD_INFO.at); dt=d.toLocaleDateString(undefined,{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); }catch(e){}
+      t+=" · uploaded "+dt+(UPLOAD_INFO.by?(" by "+UPLOAD_INFO.by):""); }
+    lu.textContent=t; }
   const st=document.querySelector(".subtitle"); if(st) st.textContent="Malaysia · live from ERP exports";
   return m;
 }
@@ -3403,7 +3441,11 @@ async function ckProcessUploaded(list){
     status.innerHTML='<span style="color:var(--green)">'+msg+'</span>';
     if(SB){
       status.innerHTML='<span style="color:var(--green)">'+msg+'</span> · saving…';
-      const {error}=await SB.from("ck_state").upsert({id:"latest",payload:slimRaw(RAW),updated_at:new Date().toISOString()});
+      const nowIso=new Date().toISOString();
+      const pl=slimRaw(RAW); pl.__uploadedBy=CURRENT_USER||""; pl.__uploadedAt=nowIso;
+      UPLOAD_INFO={by:pl.__uploadedBy, at:pl.__uploadedAt};
+      const {error}=await SB.from("ck_state").upsert({id:"latest",payload:pl,updated_at:nowIso});
+      if(!error){ rebuild(); }   // refresh header so "updated by" shows immediately
       status.innerHTML='<span style="color:var(--green)">'+msg+(error?('</span> <span style="color:var(--red)">· save failed: '+error.message+'</span>'):' · saved & shared ✓</span>');
     } else { status.innerHTML+=' <span style="color:var(--amber)">· (Supabase not connected)</span>'; }
   }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'; console.error(err); }
@@ -3431,6 +3473,7 @@ async function loadFromSupabase(){
     if(error) throw error;
     if(data && data.payload && data.payload.movements){
       RAW=data.payload;
+      if(RAW.__uploadedAt) UPLOAD_INFO={by:RAW.__uploadedBy||"", at:RAW.__uploadedAt};
       setDefaultRange(); rebuild();
       const full=window.CK.CKPipeline.build(RAW).meta;
       const s=document.getElementById("ckStatus"); if(s) s.innerHTML='<span style="color:var(--green)">✓ Loaded shared data · '+full.date_from+' → '+full.date_to+'. Upload more files to add to it.</span>';
@@ -3457,9 +3500,9 @@ if(_lf) _lf.addEventListener("submit", async function(e){
   const pw=document.getElementById("loginPass").value;
   const err=document.getElementById("loginErr"); err.style.color="var(--text-soft)"; err.textContent="Signing in\u2026";
   if(!SB){ err.style.color="var(--red)"; err.textContent="Supabase not connected."; return; }
-  const {error}=await SB.auth.signInWithPassword({email:em,password:pw});
+  const {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
   if(error){ err.style.color="var(--red)"; err.textContent=error.message; }
-  else { err.textContent=""; showApp(); resetIdle(); }
+  else { CURRENT_USER=(data&&data.user&&data.user.email)||em; err.textContent=""; showApp(); resetIdle(); }
 });
 async function doSignOut(reason){ try{ if(SB) await SB.auth.signOut(); }catch(e){} location.reload(); }
 const _lo=document.getElementById("logoutBtn");
@@ -3477,7 +3520,7 @@ function resetIdle(){
 
 (async function(){
   if(!SB){ showApp(); resetIdle(); return; }   // fallback if auth lib missing
-  try{ const {data}=await SB.auth.getSession(); if(data && data.session){ showApp(); resetIdle(); } else { showLogin(); } }
+  try{ const {data}=await SB.auth.getSession(); if(data && data.session){ CURRENT_USER=(data.session.user&&data.session.user.email)||""; showApp(); resetIdle(); } else { showLogin(); } }
   catch(e){ showLogin(); }
 })();
 </script>
