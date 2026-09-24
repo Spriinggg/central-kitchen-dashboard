@@ -497,7 +497,7 @@
     if(!recipeStd||!recipeStd.length) return [];
     const recBy={}; recipeStd.forEach(r=>recBy[nkey(r.name)]=r);
     const p2r={}; (prodMap||[]).forEach(m=>{ p2r[nkey(m.product)]=m.recipe; });
-    function findRecipe(pn){ const rn=p2r[nkey(pn)]; if(!rn) return null; let r=recBy[nkey(rn)]; if(r) return r; const nr=nkey(rn); for(const k in recBy){ if(k.indexOf(nr)>=0||nr.indexOf(k)>=0) return recBy[k]; } return null; }
+    function findRecipe(pn){ const pk=nkey(pn); const rn=p2r[pk]; if(rn){ let r=recBy[nkey(rn)]; if(r) return r; const nr=nkey(rn); for(const k in recBy){ if(k.indexOf(nr)>=0||nr.indexOf(k)>=0) return recBy[k]; } } if(recBy[pk]) return recBy[pk]; return null; }
     const exp={};
     (out.production.products||[]).forEach(p=>{ const r=findRecipe(p.product); if(!r) return;
       (r.ingredients||[]).forEach(i=>{ const g=toGrams(i.per_unit,i.unit); if(g==null) return; const k=nkey(i.name); (exp[k]=exp[k]||{name:i.name,g:0}).g += (p.actual||0)*g; }); });
