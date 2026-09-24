@@ -173,7 +173,7 @@
   <div id="loadState" style="display:none;text-align:center;padding:14px 16px;margin-bottom:16px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-border);font-size:13px;color:var(--text-soft);"></div>
   <div class="card" id="uploadPanel" style="margin-bottom:16px;">
     <p class="card-title">⬆️ Upload ERP data</p>
-    <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 12px;">Drop the Excel exports — processed in your browser and saved to Supabase (shared). Add new files anytime — data accumulates, it does not wipe.<br><b>Kitchen (CK):</b> Stock Movement (Raw Materials) chunks, Stock Balance (opening + closing), Job Production Variance (Output), Wastage Report.<br><b>PKT (USFOOD):</b> USFOOD Frozen + Ambient — Stock Movement + Stock Balance (daily). PKT files auto-detected and routed to the Logistics section.</p>
+    <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 12px;">Drop the Excel exports — processed in your browser and saved to Supabase (shared). Add new files anytime — data accumulates, it does not wipe.<br><b>Kitchen (CK):</b> Stock Movement (Raw Materials) chunks, Stock Balance (opening + closing), Job Production Variance (Output), Wastage Report.<br><b>PKT (USFOOD):</b> USFOOD Frozen + Ambient — Stock Movement + Stock Balance (daily). Routed to Logistics.<br><b>Demand:</b> RMS Sales Order (batch) export — routed to Outlet Demand. All auto-detected on upload.</p>
     <input type="file" id="ckFiles" multiple accept=".xlsx" style="font-size:13px;">
     <button id="ckProcess" class="nav-btn" style="margin-left:8px;cursor:pointer;">Process files</button>
     <div id="ckStatus" style="font-size:12.5px;color:var(--text-soft);margin-top:10px;"></div>
@@ -253,6 +253,11 @@
       </div>
     </div>
     <div id="logList"></div>
+  </div>
+
+  <div class="card" id="demandCard" style="margin-top:14px;">
+    <p class="card-title" style="margin:0 0 4px;">📥 Outlet Demand · Sales Orders (CK → outlets)</p>
+    <div id="demandList"></div>
   </div>
 
   <div class="card" style="margin-top:14px;">
@@ -574,6 +579,51 @@
   }
   root.parseFiles=parseFiles; root.mergeRaw=mergeRaw; root.build=build; root.detect=detect; root.isPKT=isPKT;
 })(window.PKT = window.PKT || {});
+</script>
+<script>
+/* ===== DEMAND (Sales Orders CK -> outlets) parser ===== */
+(function(root){
+  function clean(s){return String(s==null?"":s).replace(/\s+/g," ").trim();}
+  function num(x){var n=Number(x);return isNaN(n)?0:n;}
+  var MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  function dnorm(s){ if(!s)return""; s=clean(s); var m=s.match(/^(\d{1,2})[- ]([A-Za-z]{3})[- ](\d{4})$/); if(m){var mo=MON[m[2].toLowerCase()];if(mo!=null)return m[3]+"-"+String(mo+1).padStart(2,"0")+"-"+String(+m[1]).padStart(2,"0");} var d=new Date(s); if(!isNaN(d))return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); return ""; }
+  function detect(head){ var H=(head||[]).map(function(x){return clean(x).toUpperCase();}); return H.indexOf("SALESORDERNO")>=0 && H.indexOf("ITEMDESC")>=0 && H.indexOf("QUANTITY")>=0; }
+  function colmap(head){ var m={}; (head||[]).forEach(function(h,i){m[clean(h).toUpperCase()]=i;}); return m; }
+  function sgOutlet(s){ return /\bSG\b|singapore/i.test(String(s||"")); }
+  function isDEM(files){ return (files||[]).some(function(f){return (f.sheets||[]).some(function(sh){return detect((sh.rows||[])[0]);});}); }
+  function parseFiles(files){
+    var raw={lines:[],keys:{},dates:{}};
+    (files||[]).forEach(function(f){ (f.sheets||[]).forEach(function(sh){
+      var rows=sh.rows||[]; if(!rows.length||!detect(rows[0]))return; var C=colmap(rows[0]);
+      var gi=function(r,k){var i=C[k];return i==null?null:r[i];};
+      rows.slice(1).forEach(function(r){ if(!r||!r[C["SALESORDERNO"]])return;
+        var so=clean(gi(r,"SALESORDERNO")),code=clean(gi(r,"ITEMCODE")),desc=clean(gi(r,"ITEMDESC")),qty=num(gi(r,"QUANTITY")),date=dnorm(gi(r,"DELIVEREDDATE"));
+        var outlet=clean(gi(r,"DEBTORBRANCHCODE"))||clean(gi(r,"DEBTORNAME")),uom=clean(gi(r,"UOM")),val=num(gi(r,"SUBTOTAL"));
+        if(sgOutlet(outlet))return;
+        var key=[so,code,desc,qty,date].join("|"); if(raw.keys[key])return; raw.keys[key]=1;
+        raw.lines.push({date:date,outlet:outlet,code:code,desc:desc,qty:qty,uom:uom,value:val,so:so});
+        if(date)raw.dates[date]=1;
+      });
+    });});
+    return raw;
+  }
+  function mergeRaw(a,b){ if(!a)return b; if(!b)return a; var o={lines:a.lines.slice(),keys:Object.assign({},a.keys),dates:Object.assign({},a.dates)};
+    b.lines.forEach(function(l){var key=[l.so,l.code,l.desc,l.qty,l.date].join("|"); if(o.keys[key])return; o.keys[key]=1; o.lines.push(l);});
+    Object.keys(b.dates).forEach(function(d){o.dates[d]=1;}); return o; }
+  function nkey(s){return String(s).toLowerCase().replace(/[^a-z0-9]/g,"");}
+  function build(raw){ var lines=(raw&&raw.lines)||[]; var byProd={},byOutlet={}; var dates=Object.keys((raw&&raw.dates)||{}).sort();
+    lines.forEach(function(l){
+      var pk=nkey(l.desc); var p=byProd[pk]||(byProd[pk]={desc:l.desc,code:l.code,qty:0,uoms:{},value:0,orders:0});
+      p.qty+=l.qty; p.uoms[l.uom]=(p.uoms[l.uom]||0)+l.qty; p.value+=l.value; p.orders++;
+      var o=byOutlet[l.outlet]||(byOutlet[l.outlet]={outlet:l.outlet,value:0,qty:0,lines:0}); o.value+=l.value; o.qty+=l.qty; o.lines++;
+    });
+    return { byProduct:Object.keys(byProd).map(function(k){return byProd[k];}).sort(function(a,b){return b.value-a.value;}),
+      byOutlet:Object.keys(byOutlet).map(function(k){return byOutlet[k];}).sort(function(a,b){return b.value-a.value;}),
+      totalValue:lines.reduce(function(s,l){return s+l.value;},0), lineCount:lines.length, productCount:Object.keys(byProd).length,
+      dateFrom:dates[0]||null, dateTo:dates[dates.length-1]||null };
+  }
+  root.parseFiles=parseFiles; root.mergeRaw=mergeRaw; root.build=build; root.detect=detect; root.isDEM=isDEM; root.nkey=nkey;
+})(window.DEM = window.DEM || {});
 </script>
 <script id="recipedata" type="application/json">{
   "source": "US Pizza Center Kitchen - Knowledge / Recipe Cards",
@@ -3482,6 +3532,38 @@ function renderDataInfo(){
     t += (t?" · ":"")+"uploaded "+dt+(UPLOAD_INFO.by?(" by "+UPLOAD_INFO.by):""); }
   di.textContent=t;
 }
+// ---- DEMAND (Sales Orders CK -> outlets) ----
+let DEMRAW=null;
+function renderDemand(){
+  const el=document.getElementById("demandList"); if(!el) return;
+  if(!DEMRAW || !DEMRAW.lines || !DEMRAW.lines.length){
+    el.innerHTML='<div class="src-badge">○ No demand data yet — upload the RMS Sales Order (batch) export.</div>';
+    return;
+  }
+  const b=window.DEM.build(DEMRAW);
+  const rm=n=>"RM "+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  const num=n=>Number(n||0).toLocaleString();
+  const dspan=b.dateFrom===b.dateTo?(b.dateFrom||""):((b.dateFrom||"")+" → "+(b.dateTo||""));
+  let h='<div class="src-badge live">● from Sales Orders · '+dspan+'</div>';
+  h+='<div style="font-size:11px;color:var(--amber);margin:2px 0 8px;">Note: reflects only the uploaded sales orders ('+b.byOutlet.length+' outlets) — not necessarily every outlet.</div>';
+  h+='<div style="display:flex;gap:22px;flex-wrap:wrap;margin:0 0 12px;">';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Total ordered (value)</p><p style="font-size:21px;font-weight:700;margin:0">'+rm(b.totalValue)+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Outlets</p><p style="font-size:21px;font-weight:700;margin:0">'+b.byOutlet.length+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Products</p><p style="font-size:21px;font-weight:700;margin:0">'+b.productCount+'</p></div>';
+  h+='</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+  // top outlets
+  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Top outlets by order value</div>';
+  b.byOutlet.slice(0,8).forEach(o=>{ h+='<div class="line"><span style="max-width:64%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+o.outlet+'</span><span style="font-weight:600">'+rm(o.value)+'</span></div>'; });
+  h+='</div>';
+  // demand by CK product (MY US)
+  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Demand by CK product</div>';
+  const ckprods=b.byProduct.filter(p=>/^my us/i.test(p.desc)).slice(0,10);
+  (ckprods.length?ckprods:b.byProduct.slice(0,10)).forEach(p=>{ const uoms=Object.keys(p.uoms).map(u=>Math.round(p.uoms[u])+" "+(u||"").toLowerCase()).join(", ");
+    h+='<div class="line"><span style="max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.desc+'</span><span style="font-weight:600">'+uoms+'</span></div>'; });
+  h+='</div></div>';
+  el.innerHTML=h;
+}
 // ---- PKT (USFOOD warehouse) — real WMS dispatches, MY/SG separate ----
 let PKTRAW=null, pktRegion="MY", pktLogPage=0; const PKT_LOG_PAGE=50;
 function pktLogPrev(){ if(pktLogPage>0){ pktLogPage--; renderPKT(); } }
@@ -3631,8 +3713,11 @@ async function ckProcessUploaded(list){
   if(!list.length){ status.textContent="Please choose the ERP Excel files first."; return; }
   status.textContent="Reading "+list.length+" file(s)…";
   try{
-    const ckFiles=[], pktFiles=[];
-    for(const f of list){ const rf=await ckReadFile(f); (window.PKT && window.PKT.isPKT([rf]) ? pktFiles : ckFiles).push(rf); }
+    const ckFiles=[], pktFiles=[], demFiles=[];
+    for(const f of list){ const rf=await ckReadFile(f);
+      if(window.DEM && window.DEM.isDEM([rf])) demFiles.push(rf);
+      else if(window.PKT && window.PKT.isPKT([rf])) pktFiles.push(rf);
+      else ckFiles.push(rf); }
     const parts=[]; const nowIso=new Date().toISOString();
 
     // ---- CK (kitchen) files ----
@@ -3665,7 +3750,22 @@ async function ckProcessUploaded(list){
       }
     }
 
-    if(!ckFiles.length && !pktFiles.length){ status.innerHTML='<span style="color:var(--amber)">No recognised ERP/PKT files in that selection.</span>'; return; }
+    // ---- DEMAND (Sales Order) files ----
+    if(demFiles.length){
+      const newD=window.DEM.parseFiles(demFiles);
+      DEMRAW = DEMRAW ? window.DEM.mergeRaw(DEMRAW, newD) : newD;
+      renderDemand();
+      const db=window.DEM.build(DEMRAW);
+      parts.push("Demand: "+db.lineCount+" lines · "+db.byOutlet.length+" outlets · RM "+Math.round(db.totalValue).toLocaleString()+" · "+db.dateFrom+"→"+db.dateTo);
+      if(SB){
+        DEMRAW.__uploadedBy=CURRENT_USER||""; DEMRAW.__uploadedAt=nowIso;
+        noteUpload(DEMRAW.__uploadedBy, DEMRAW.__uploadedAt); renderDataInfo();
+        const {error}=await SB.from("ck_state").upsert({id:"demand",payload:DEMRAW,updated_at:nowIso});
+        if(error) parts.push("⚠ Demand save failed: "+error.message);
+      }
+    }
+
+    if(!ckFiles.length && !pktFiles.length && !demFiles.length){ status.innerHTML='<span style="color:var(--amber)">No recognised ERP / PKT / Sales Order files in that selection.</span>'; return; }
     const saved = SB ? " · saved & shared ✓" : " · (Supabase not connected)";
     status.innerHTML='<span style="color:var(--green)">✓ '+parts.join(" &nbsp;|&nbsp; ")+saved+'</span>';
   }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'; console.error(err); }
@@ -3718,6 +3818,20 @@ async function loadPKTFromSupabase(){
   }catch(e){ console.warn("pkt load failed",e); }
   return false;
 }
+async function loadDemandFromSupabase(){
+  if(!SB) return false;
+  try{
+    const {data,error}=await SB.from("ck_state").select("payload").eq("id","demand").maybeSingle();
+    if(error) throw error;
+    if(data && data.payload && data.payload.lines){
+      DEMRAW=data.payload; renderDemand();
+      if(DEMRAW.__uploadedAt) noteUpload(DEMRAW.__uploadedBy||"", DEMRAW.__uploadedAt);
+      renderDataInfo();
+      return true;
+    }
+  }catch(e){ console.warn("demand load failed",e); }
+  return false;
+}
 let __inited=false;
 function setLoadState(msg){ const el=document.getElementById("loadState"); if(!el) return; if(msg){ el.textContent=msg; el.style.display=""; } else { el.style.display="none"; } }
 async function initApp(){
@@ -3725,8 +3839,9 @@ async function initApp(){
   setLoadState("Loading data…");                 // show while Supabase loads (no fake sample)
   const ok=await loadFromSupabase();
   const okp=await loadPKTFromSupabase();
-  if(ok||okp){ setLoadState(""); }
-  else { setLoadState("No data loaded yet — upload the ERP / PKT files below to populate the dashboard."); }
+  const okd=await loadDemandFromSupabase();
+  if(ok||okp||okd){ setLoadState(""); }
+  else { setLoadState("No data loaded yet — upload the ERP / PKT / Sales Order files below to populate the dashboard."); }
 }
 function showApp(){ document.getElementById("loginOverlay").style.display="none"; const w=document.querySelector(".wrap"); if(w) w.style.display=""; initApp(); }
 function showLogin(){ document.getElementById("loginOverlay").style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
