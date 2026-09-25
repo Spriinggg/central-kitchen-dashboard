@@ -3863,8 +3863,11 @@ if(_lo) _lo.addEventListener("click", function(){ doSignOut("manual"); });
 // ---- AUTO-LOGOUT AFTER 30 MIN IDLE ----
 const IDLE_MS=30*60*1000;
 let __idleTimer=null;
+function markActive(){ try{ localStorage.setItem("ck_lastActive", String(Date.now())); }catch(e){} }
+function idleTooLong(){ try{ var la=parseInt(localStorage.getItem("ck_lastActive")||"0",10)||0; return la>0 && (Date.now()-la)>IDLE_MS; }catch(e){ return false; } }
 function resetIdle(){
   if(document.getElementById("loginOverlay").style.display!=="none") return; // only when logged in
+  markActive();
   clearTimeout(__idleTimer);
   __idleTimer=setTimeout(function(){ doSignOut("idle"); }, IDLE_MS);
 }
@@ -3872,8 +3875,12 @@ function resetIdle(){
 
 (async function(){
   if(!SB){ showApp(); resetIdle(); return; }   // fallback if auth lib missing
-  try{ const {data}=await SB.auth.getSession(); if(data && data.session){ CURRENT_USER=userLabel(data.session.user); showApp(); resetIdle(); } else { showLogin(); } }
-  catch(e){ showLogin(); }
+  try{ const {data}=await SB.auth.getSession();
+    if(data && data.session){
+      if(idleTooLong()){ try{ await SB.auth.signOut(); }catch(e){} try{ localStorage.removeItem("ck_lastActive"); }catch(e){} showLogin(); return; }
+      CURRENT_USER=userLabel(data.session.user); showApp(); resetIdle();
+    } else { showLogin(); }
+  } catch(e){ showLogin(); }
 })();
 </script>
 </body>
