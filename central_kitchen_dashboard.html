@@ -189,8 +189,10 @@
   <div class="card" id="uploadPanel" style="margin-bottom:16px;">
     <p class="card-title">⬆️ Upload ERP data</p>
     <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 12px;">Drop the Excel exports — processed in your browser and saved to Supabase (shared). Add new files anytime — data accumulates, it does not wipe.<br><b>Kitchen (CK):</b> Stock Movement (Raw Materials) chunks, Stock Balance (opening + closing), Job Production Variance (Output), Wastage Report.<br><b>PKT (USFOOD):</b> USFOOD Frozen + Ambient — Stock Movement + Stock Balance (daily). Routed to Logistics.<br><b>Demand:</b> RMS Sales Order (batch) export — routed to Outlet Demand. All auto-detected on upload.</p>
-    <input type="file" id="ckFiles" multiple accept=".xlsx" style="font-size:13px;">
-    <button id="ckProcess" class="nav-btn" style="margin-left:8px;cursor:pointer;">Process files</button>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+      <input type="file" id="ckFiles" multiple accept=".xlsx" style="font-size:13px;max-width:100%;flex:1 1 auto;min-width:0;">
+      <button id="ckProcess" class="nav-btn" style="cursor:pointer;white-space:nowrap;">Process files</button>
+    </div>
     <div id="ckStatus" style="font-size:12.5px;color:var(--text-soft);margin-top:10px;"></div>
   </div>
 
