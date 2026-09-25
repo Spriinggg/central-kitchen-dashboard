@@ -269,11 +269,21 @@
         <button data-reg="SG">Singapore</button>
       </div>
     </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 2px;">
+      <input id="pktSearch" type="text" placeholder="Search outlet or item…" style="font-size:12px;padding:7px 12px;border-radius:20px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.6);flex:1 1 200px;min-width:0;outline:none;">
+      <button id="pktExport" class="nav-btn" style="cursor:pointer;font-size:12px;padding:6px 12px;white-space:nowrap;">⬇ Export CSV</button>
+    </div>
     <div id="logList"></div>
   </div>
 
   <div class="card" id="demandCard" style="margin-top:14px;">
-    <p class="card-title" style="margin:0 0 4px;">📥 Outlet Demand · Sales Orders (CK → outlets)</p>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <p class="card-title" style="margin:0;">📥 Outlet Demand · Sales Orders (CK → outlets)</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="demSearch" type="text" placeholder="Search outlet or product…" style="font-size:12px;padding:7px 12px;border-radius:20px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.6);flex:1 1 180px;min-width:0;outline:none;">
+        <button id="demExport" class="nav-btn" style="cursor:pointer;font-size:12px;padding:6px 12px;white-space:nowrap;">⬇ Export CSV</button>
+      </div>
+    </div>
     <div id="demandList"></div>
   </div>
 
@@ -3549,6 +3559,25 @@ function renderDataInfo(){
     t += (t?" · ":"")+"uploaded "+dt+(UPLOAD_INFO.by?(" by "+UPLOAD_INFO.by):""); }
   di.textContent=t;
 }
+// ---- shared: horizontal bar chart (single-hue magnitude) + CSV download ----
+function hbars(rows, opts){ opts=opts||{}; var color=opts.color||"var(--accent)"; var fmt=opts.fmt||function(n){return n;};
+  if(!rows.length) return '<div class="empty">No data</div>';
+  var max=1; rows.forEach(function(r){ if(r.value>max) max=r.value; });
+  var h='';
+  rows.forEach(function(r){ var w=Math.max(2,Math.round(r.value/max*100)); var lbl=String(r.label);
+    h+='<div style="margin-bottom:9px;">'+
+       '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;gap:8px;"><span style="max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+lbl+'</span><span style="font-weight:600;white-space:nowrap">'+fmt(r.value)+'</span></div>'+
+       '<div style="height:8px;background:var(--track);border-radius:5px;overflow:hidden;"><div style="height:8px;width:'+w+'%;background:'+color+';border-radius:5px;" title="'+lbl.replace(/"/g,"")+': '+fmt(r.value)+'"></div></div>'+
+       '</div>';
+  });
+  return h;
+}
+function downloadCSV(filename, head, rows){
+  var esc=function(v){ v=(v==null?"":String(v)); return /[",\n]/.test(v)?('"'+v.replace(/"/g,'""')+'"'):v; };
+  var csv=[head.map(esc).join(",")].concat(rows.map(function(r){return r.map(esc).join(",");})).join("\n");
+  var blob=new Blob([csv],{type:"text/csv"}); var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=filename; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},100);
+}
 // ---- DEMAND (Sales Orders CK -> outlets) ----
 let DEMRAW=null;
 function renderDemand(){
@@ -3559,7 +3588,9 @@ function renderDemand(){
   }
   const b=window.DEM.build(DEMRAW);
   const rm=n=>"RM "+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
-  const num=n=>Number(n||0).toLocaleString();
+  const q=((document.getElementById("demSearch")||{}).value||"").toLowerCase().trim();
+  let outlets=b.byOutlet, prods=b.byProduct;
+  if(q){ outlets=outlets.filter(o=>o.outlet.toLowerCase().indexOf(q)>=0); prods=prods.filter(p=>p.desc.toLowerCase().indexOf(q)>=0); }
   const dspan=b.dateFrom===b.dateTo?(b.dateFrom||""):((b.dateFrom||"")+" → "+(b.dateTo||""));
   let h='<div class="src-badge live">● from Sales Orders · '+dspan+'</div>';
   h+='<div style="font-size:11px;color:var(--amber);margin:2px 0 8px;">Note: reflects only the uploaded sales orders ('+b.byOutlet.length+' outlets) — not necessarily every outlet.</div>';
@@ -3568,23 +3599,35 @@ function renderDemand(){
   h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Outlets</p><p style="font-size:21px;font-weight:700;margin:0">'+b.byOutlet.length+'</p></div>';
   h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Products</p><p style="font-size:21px;font-weight:700;margin:0">'+b.productCount+'</p></div>';
   h+='</div>';
+  if(q) h+='<div style="font-size:11px;color:var(--text-mut);margin:-4px 0 8px;">Filter: “'+q+'” · '+outlets.length+' outlet(s), '+prods.length+' product(s)</div>';
   h+='<div class="grid2">';
-  // top outlets
-  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Top outlets by order value</div>';
-  b.byOutlet.slice(0,8).forEach(o=>{ h+='<div class="line"><span style="max-width:64%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+o.outlet+'</span><span style="font-weight:600">'+rm(o.value)+'</span></div>'; });
+  // top outlets — bar chart
+  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px">Top outlets by order value (RM)</div>';
+  h+=hbars(outlets.slice(0,8).map(o=>({label:o.outlet,value:o.value})),{fmt:rm});
   h+='</div>';
-  // demand by CK product (MY US)
+  // demand by CK product
   h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Demand by CK product</div>';
-  const ckprods=b.byProduct.filter(p=>/^my us/i.test(p.desc)).slice(0,10);
-  (ckprods.length?ckprods:b.byProduct.slice(0,10)).forEach(p=>{ const uoms=Object.keys(p.uoms).map(u=>Math.round(p.uoms[u])+" "+(u||"").toLowerCase()).join(", ");
-    h+='<div class="line"><span style="max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.desc+'</span><span style="font-weight:600">'+uoms+'</span></div>'; });
+  const ckprods=prods.filter(p=>/^my us/i.test(p.desc)); const showP=(ckprods.length?ckprods:prods).slice(0,12);
+  if(!showP.length) h+='<div class="empty">No match</div>';
+  showP.forEach(p=>{ const uoms=Object.keys(p.uoms).map(u=>Math.round(p.uoms[u])+" "+(u||"").toLowerCase()).join(", ");
+    h+='<div class="line"><span style="max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.desc+'</span><span style="font-weight:600">'+uoms+'</span></div>'; });
   h+='</div></div>';
   el.innerHTML=h;
+}
+function demExportCSV(){ if(!DEMRAW||!DEMRAW.lines||!DEMRAW.lines.length){ alert("No demand data to export."); return; }
+  const rows=DEMRAW.lines.map(l=>[l.date,l.outlet,l.code,l.desc,l.qty,l.uom,l.value,l.so]);
+  downloadCSV("outlet_demand.csv",["Date","Outlet","ItemCode","ItemDesc","Qty","UOM","Value_RM","SalesOrder"],rows);
 }
 // ---- PKT (USFOOD warehouse) — real WMS dispatches, MY/SG separate ----
 let PKTRAW=null, pktRegion="MY", pktLogPage=0; const PKT_LOG_PAGE=50;
 function pktLogPrev(){ if(pktLogPage>0){ pktLogPage--; renderPKT(); } }
 function pktLogNext(){ pktLogPage++; renderPKT(); }
+function pktExportCSV(){ if(!PKTRAW||!PKTRAW.mvt||!PKTRAW.mvt.length){ alert("No PKT data to export."); return; }
+  const b=window.PKT.build(PKTRAW,{region:pktRegion});
+  const pq=((document.getElementById("pktSearch")||{}).value||"").toLowerCase().trim();
+  let rows=b.log; if(pq) rows=rows.filter(l=>((l.outlet||"")+" "+(l.desc||"")+" "+(l.doc||"")).toLowerCase().indexOf(pq)>=0);
+  downloadCSV("pkt_dispatch_"+pktRegion+".csv",["Date","Outlet","SKU","Item","UOM","Qty_Out","DO","Temp"],
+    rows.map(l=>[l.date,l.outlet,l.sku,l.desc,l.uom,l.out,l.doc,l.temp])); }
 window.PKT_SUMMARY=null;
 function refreshPKTSummary(){
   if(PKTRAW && PKTRAW.mvt && PKTRAW.mvt.length && window.PKT){
@@ -3608,9 +3651,8 @@ function renderPKT(){
   h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">SKUs</p><p style="font-size:21px;font-weight:700;margin:0">'+b.skuCount+'</p></div>';
   h+='</div>';
   h+='<div class="grid2">';
-  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Top outlets ('+pktRegion+')</div>';
-  b.outlets.slice(0,8).forEach(o=>{ h+='<div class="line"><span>'+o.outlet+'</span><span style="font-weight:600">'+rm(o.out)+'</span></div>'; });
-  if(!b.outlets.length) h+='<div class="empty">No dispatches for '+pktRegion+'</div>';
+  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px">Top outlets ('+pktRegion+') — units dispatched</div>';
+  h+=hbars(b.outlets.slice(0,8).map(o=>({label:o.outlet,value:o.out})),{fmt:rm});
   h+='</div>';
   h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Warehouse stock on-hand <span style="text-transform:none">(shared MY+SG)</span></div>';
   h+='<div class="line"><span>❄️ Frozen available</span><span style="font-weight:600">'+rm(b.stock.frozen.avail)+' <span style="color:var(--text-mut);font-weight:400">('+b.stock.frozen.skus+' SKU)</span></span></div>';
@@ -3618,11 +3660,14 @@ function renderPKT(){
   if(b.low && b.low.length){ h+='<div style="margin-top:8px;font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Low stock (≤5)</div>';
     b.low.slice(0,5).forEach(x=>{ h+='<div class="line"><span style="max-width:66%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+x.desc+'</span><span style="color:var(--red);font-weight:600">'+rm(x.avail)+' '+(x.uom||"").toLowerCase()+'</span></div>'; }); }
   h+='</div></div>';
-  const total=b.log.length; const pages=Math.max(1,Math.ceil(total/PKT_LOG_PAGE));
+  const pq=((document.getElementById("pktSearch")||{}).value||"").toLowerCase().trim();
+  let logAll=b.log;
+  if(pq) logAll=b.log.filter(l=>((l.outlet||"")+" "+(l.desc||"")+" "+(l.doc||"")).toLowerCase().indexOf(pq)>=0);
+  const total=logAll.length; const pages=Math.max(1,Math.ceil(total/PKT_LOG_PAGE));
   if(pktLogPage>=pages) pktLogPage=pages-1; if(pktLogPage<0) pktLogPage=0;
-  const start=pktLogPage*PKT_LOG_PAGE; const pageRows=b.log.slice(start,start+PKT_LOG_PAGE);
+  const start=pktLogPage*PKT_LOG_PAGE; const pageRows=logAll.slice(start,start+PKT_LOG_PAGE);
   h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:12px 0 6px;">';
-  h+='<span style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Dispatch log ('+pktRegion+') · '+total+' line(s)</span>';
+  h+='<span style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Dispatch log ('+pktRegion+') · '+total+' line(s)'+(pq?' · filter “'+pq+'”':'')+'</span>';
   h+='<span style="display:flex;align-items:center;gap:8px;font-size:12px;">'+
      '<button onclick="pktLogPrev()" class="nav-btn" style="cursor:pointer;padding:3px 11px;'+(pktLogPage<=0?'opacity:.35;pointer-events:none;':'')+'">◀ Prev</button>'+
      '<span style="color:var(--text-soft);white-space:nowrap">'+(total?(start+1):0)+'–'+Math.min(start+PKT_LOG_PAGE,total)+' / '+total+'</span>'+
@@ -3789,6 +3834,12 @@ async function ckProcessUploaded(list){
 }
 (function(){ const bs=document.getElementById("btnSummary"); if(bs) bs.addEventListener("click", openSummary); })();
 (function(){ const t=document.getElementById("pktRegionToggle"); if(t) t.addEventListener("click",function(e){ const r=e.target.dataset.reg; if(!r)return; pktRegion=r; pktLogPage=0; t.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.reg===r)); renderPKT(); }); })();
+(function(){
+  const ps=document.getElementById("pktSearch"); if(ps) ps.addEventListener("input",function(){ pktLogPage=0; renderPKT(); });
+  const pe=document.getElementById("pktExport"); if(pe) pe.addEventListener("click",pktExportCSV);
+  const ds=document.getElementById("demSearch"); if(ds) ds.addEventListener("input",renderDemand);
+  const de=document.getElementById("demExport"); if(de) de.addEventListener("click",demExportCSV);
+})();
 document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
 document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
 document.getElementById("periodToggle").addEventListener("click",function(e){
