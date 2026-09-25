@@ -67,7 +67,7 @@
   .metric-label { font-size:13px; color:var(--text-soft); margin:0 0 6px; }
   .metric-val { font-size:26px; font-weight:600; margin:0; }
 
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
   .card { background:var(--glass); backdrop-filter:blur(38px) saturate(1.7); -webkit-backdrop-filter:blur(38px) saturate(1.7);
     border:1px solid var(--glass-border); border-radius:18px; padding:16px 18px;
     box-shadow:var(--glow), inset 0 1px 1px rgba(255,255,255,0.9), inset 0 -1px 1px rgba(255,255,255,0.3); }
@@ -91,9 +91,24 @@
   .src-badge.live { color:var(--green); font-weight:600; }
   .foot { text-align:center; font-size:12px; color:var(--text-mut); margin-top:20px; }
 
+  .tblwrap { overflow:auto; -webkit-overflow-scrolling:touch; max-width:100%; }
+  .grid2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  .bar-top { flex-wrap:wrap; gap:2px 8px; }
   @media (max-width:760px) {
     .metrics { grid-template-columns:repeat(2,1fr); }
-    .grid { grid-template-columns:1fr; }
+    .grid, .grid2, .grid3 { grid-template-columns:minmax(0,1fr); }
+  }
+  @media (max-width:520px) {
+    body { padding:14px; }
+    .metrics { grid-template-columns:1fr 1fr; gap:10px; }
+    .metric-val { font-size:22px; }
+    .card { padding:14px 14px; }
+    .head { flex-direction:column; align-items:flex-start; gap:8px; }
+    .controls { gap:10px; }
+    .controls .ctrl-group { flex-wrap:wrap; width:100%; }
+    #dFrom, #dTo { flex:1 1 40%; min-width:0; }
+    .title { font-size:18px; }
   }
 
   /* ---- polish: hover, fade-in, bar grow ---- */
@@ -3484,7 +3499,7 @@ function renderMoM(){
     {l:"Waste cost", v:rm(A.waste), p:rm(B.waste), d:delta(A.waste,B.waste,false)},
     {l:"Raw consumed", v:rm(A.cost), p:rm(B.cost), d:delta(A.cost,B.cost,null)} ];
   let h='<p class="card-title">📊 Month-over-month <span style="font-weight:400;color:var(--text-mut);font-size:12px">'+curLbl+' vs '+prvLbl+'</span></p>';
-  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">';
+  h+='<div class="grid3">';
   items.forEach(it=>{ h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0 0 3px">'+it.l+'</p>'+
     '<p style="font-size:21px;font-weight:700;margin:0">'+it.v+'</p>'+
     '<p style="font-size:12px;margin:3px 0 0;color:'+it.d.col+';font-weight:600">'+it.d.txt+' <span style="color:var(--text-mut);font-weight:400">vs '+it.p+'</span></p></div>'; });
@@ -3551,7 +3566,7 @@ function renderDemand(){
   h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Outlets</p><p style="font-size:21px;font-weight:700;margin:0">'+b.byOutlet.length+'</p></div>';
   h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Products</p><p style="font-size:21px;font-weight:700;margin:0">'+b.productCount+'</p></div>';
   h+='</div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+  h+='<div class="grid2">';
   // top outlets
   h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Top outlets by order value</div>';
   b.byOutlet.slice(0,8).forEach(o=>{ h+='<div class="line"><span style="max-width:64%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+o.outlet+'</span><span style="font-weight:600">'+rm(o.value)+'</span></div>'; });
@@ -3590,7 +3605,7 @@ function renderPKT(){
   h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Outlets</p><p style="font-size:21px;font-weight:700;margin:0">'+b.outletCount+'</p></div>';
   h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">SKUs</p><p style="font-size:21px;font-weight:700;margin:0">'+b.skuCount+'</p></div>';
   h+='</div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+  h+='<div class="grid2">';
   h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Top outlets ('+pktRegion+')</div>';
   b.outlets.slice(0,8).forEach(o=>{ h+='<div class="line"><span>'+o.outlet+'</span><span style="font-weight:600">'+rm(o.out)+'</span></div>'; });
   if(!b.outlets.length) h+='<div class="empty">No dispatches for '+pktRegion+'</div>';
@@ -3611,8 +3626,8 @@ function renderPKT(){
      '<span style="color:var(--text-soft);white-space:nowrap">'+(total?(start+1):0)+'–'+Math.min(start+PKT_LOG_PAGE,total)+' / '+total+'</span>'+
      '<button onclick="pktLogNext()" class="nav-btn" style="cursor:pointer;padding:3px 11px;'+(pktLogPage>=pages-1?'opacity:.35;pointer-events:none;':'')+'">Next ▶</button>'+
      '</span></div>';
-  h+='<div style="max-height:340px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:10px;">';
-  h+='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>'+
+  h+='<div class="tblwrap" style="max-height:340px;border:1px solid var(--glass-border);border-radius:10px;">';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:460px"><thead><tr>'+
      '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Date</th>'+
      '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Outlet</th>'+
      '<th style="text-align:left;padding:6px 8px;position:sticky;top:0;background:var(--card-bg,#fff)">Item</th>'+
