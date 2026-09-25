@@ -3395,7 +3395,7 @@ document.getElementById("rsearch").addEventListener("input", e => { rQuery = e.t
 const SB_URL="https://dfhuoyffwpxlhnewlykt.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmaHVveWZmd3B4bGhuZXdseWt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5Njc0NDQsImV4cCI6MjEwNTU0MzQ0NH0.BtAutfSoY2TZ_IkGXdhZ8TqovegS8UDh8C-cLgcKWKI";
 let SB=null;
-try{ if(window.supabase) SB=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ console.warn("supabase init failed",e); }
+try{ if(window.supabase) SB=window.supabase.createClient(SB_URL,SB_KEY,{auth:{storage:window.sessionStorage,persistSession:true,autoRefreshToken:true}}); }catch(e){ console.warn("supabase init failed",e); }
 let RAW=null;
 let CURRENT_USER="";      // display name (or email) of the signed-in user (for "uploaded by")
 let UPLOAD_INFO=null;     // {by, at} of the last upload that populated the shared data
