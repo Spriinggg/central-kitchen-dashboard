@@ -362,12 +362,17 @@
       <div class="card">
         <p class="card-title">⬆️ Uploading data</p>
         <div style="font-size:13px;color:var(--text);line-height:1.7;">
-          Use <b>Upload ERP data</b> on the Dashboard. Drag or choose the Excel exports and press <b>Process files</b>. The system detects each file automatically:
+          Use <b>Upload ERP data</b> on the Dashboard. Drag or choose the Excel exports and press <b>Process files</b>. The system detects each file automatically — you can select all of them together in one go:
           <div style="margin-top:6px;">
-            • <b>Kitchen (CK):</b> Stock Movement, Stock Balance, Job Production Variance, Wastage Report<br>
+            • <b>Kitchen (CK)</b> — 4 files from Codemax:<br>
+            &nbsp;&nbsp;– <code>REPORT_Stock_Movement_Details_(Raw_Materials)</code><br>
+            &nbsp;&nbsp;– <code>REPORT_Stock_Balance_(Stock_Value_By_Date)_(Raw_Materials)</code><br>
+            &nbsp;&nbsp;– <code>REPORT_Job_Production_Variance_(Output)</code><br>
+            &nbsp;&nbsp;– <code>REPORT_Wastage_Reports</code><br>
             • <b>PKT (USFOOD):</b> Frozen + Ambient — Stock Movement + Stock Balance (daily)<br>
             • <b>Demand:</b> RMS Sales Order (batch) export
           </div>
+          <div style="margin-top:6px;"><b>Stock Balance is a snapshot, not a daily log</b> — the system only keeps the <i>earliest</i> upload as the opening balance and the <i>latest</i> upload as the closing balance. Once an opening balance is set, you only need to upload the most recent Stock Balance each time (not every day in between) for the closing side to stay current.</div>
           <div style="margin-top:6px;">Data <b>accumulates</b> — new uploads add to what is there, they do not wipe it. Everything is saved to the shared database, so anyone who signs in sees the same up-to-date data on any device.</div>
         </div>
       </div>
