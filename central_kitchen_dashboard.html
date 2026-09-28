@@ -3854,8 +3854,17 @@ function updatePeriodLabel(){ const el=document.getElementById("periodLabel"); i
 function setDefaultRange(){ const full=window.CK.CKPipeline.build(RAW); FULL_MAX = full.meta.date_to ? new Date(full.meta.date_to+"T00:00:00") : new Date(); CURRENT_RANGE = monthRange(FULL_MAX); setActivePeriod("month"); syncDateInputs(); }
 function rebuild(){ if(!RAW) return null; const out=window.CK.CKPipeline.build(RAW, CURRENT_RANGE); applyData(out); updatePeriodLabel(); return out; }
 
+function isSupportedSpreadsheet(file){
+  const n=(file&&file.name||"").toLowerCase();
+  return n.endsWith(".xlsx")||n.endsWith(".xls")||n.endsWith(".xlsm")||n.endsWith(".csv");
+}
 async function ckReadFile(file){
-  const buf=await file.arrayBuffer(); const wb=XLSX.read(buf,{type:"array"});
+  const buf=await file.arrayBuffer();
+  if(!buf||buf.byteLength===0) throw new Error("file is empty (0 bytes)");
+  let wb;
+  try{ wb=XLSX.read(buf,{type:"array"}); }
+  catch(e){ throw new Error("could not be read as a spreadsheet — it may be corrupted, password-protected, or not actually an Excel file"); }
+  if(!wb.SheetNames||!wb.SheetNames.length) throw new Error("has no sheets");
   return { name:file.name, sheets: wb.SheetNames.map(sn=>({title:sn, rows:XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null})})) };
 }
 async function ckProcessUploaded(list){
@@ -3863,12 +3872,18 @@ async function ckProcessUploaded(list){
   list=Array.from(list||[]);
   if(!list.length){ status.textContent="Please choose the ERP Excel files first."; return; }
   status.textContent="Reading "+list.length+" file(s)…";
+  const skipped=[];
   try{
     const ckFiles=[], pktFiles=[], demFiles=[];
-    for(const f of list){ const rf=await ckReadFile(f);
+    for(const f of list){
+      if(!isSupportedSpreadsheet(f)){ skipped.push(f.name+" — not a supported spreadsheet file (.xlsx/.xls/.csv)"); continue; }
+      let rf;
+      try{ rf=await ckReadFile(f); }
+      catch(e){ skipped.push(f.name+" — "+(e&&e.message||"could not be read")); continue; }
       if(window.DEM && window.DEM.isDEM([rf])) demFiles.push(rf);
       else if(window.PKT && window.PKT.isPKT([rf])) pktFiles.push(rf);
-      else ckFiles.push(rf); }
+      else ckFiles.push(rf);
+    }
     const parts=[]; const nowIso=new Date().toISOString();
 
     // ---- CK (kitchen) files ----
@@ -3916,10 +3931,14 @@ async function ckProcessUploaded(list){
       }
     }
 
-    if(!ckFiles.length && !pktFiles.length && !demFiles.length){ status.innerHTML='<span style="color:var(--amber)">No recognised ERP / PKT / Sales Order files in that selection.</span>'; return; }
+    const skipHtml = skipped.length ? '<div style="color:var(--amber);margin-top:6px;">⚠ Skipped '+skipped.length+' file(s):<br>'+skipped.map(s=>"• "+s).join("<br>")+'</div>' : "";
+    if(!ckFiles.length && !pktFiles.length && !demFiles.length){
+      status.innerHTML='<span style="color:var(--amber)">No recognised ERP / PKT / Sales Order files in that selection.</span>'+skipHtml;
+      return;
+    }
     const saved = SB ? " · saved & shared ✓" : " · (Supabase not connected)";
-    status.innerHTML='<span style="color:var(--green)">✓ '+parts.join(" &nbsp;|&nbsp; ")+saved+'</span>';
-  }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'; console.error(err); }
+    status.innerHTML='<span style="color:var(--green)">✓ '+parts.join(" &nbsp;|&nbsp; ")+saved+'</span>'+skipHtml;
+  }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'+(skipped.length?'<div style="color:var(--amber);margin-top:6px;">⚠ Also skipped: '+skipped.join("; ")+'</div>':""); console.error(err); }
 }
 (function(){ const bs=document.getElementById("btnSummary"); if(bs) bs.addEventListener("click", openSummary); })();
 (function(){ const t=document.getElementById("pktRegionToggle"); if(t) t.addEventListener("click",function(e){ const r=e.target.dataset.reg; if(!r)return; pktRegion=r; pktLogPage=0; t.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.reg===r)); renderPKT(); }); })();
