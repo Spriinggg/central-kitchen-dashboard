@@ -77,11 +77,11 @@ function drawTrend(metric) {
   // pick data + max
   let series, maxY, kind, colors, labels;
   if (metric === "waste") {
-    series = [WEEKLY.waste]; kind = "line"; colors = ["var(--amber)"]; labels = ["Waste %"];
+    series = [WEEKLY.waste]; kind = "line"; colors = ["var(--amber)"]; labels = ["Waste cost (RM)"];
     maxY = Math.ceil(Math.max(...WEEKLY.waste) + 1);
   } else if (metric === "production") {
     series = [WEEKLY.produced, WEEKLY.sold]; kind = "line";
-    colors = ["var(--accent)", "var(--green)"]; labels = ["Produced", "Sold"];
+    colors = ["var(--accent)", "var(--green)"]; labels = ["Produced", "Expected"];
     maxY = Math.ceil(Math.max(...WEEKLY.produced) / 100) * 100 + 100;
   } else {
     series = [WEEKLY.variance]; kind = "bar"; colors = ["var(--red)"]; labels = ["Variance alerts"];
@@ -108,12 +108,12 @@ function drawTrend(metric) {
       const pts = data.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
       svg += `<polyline points="${pts}" fill="none" stroke="${colors[s]}" stroke-width="2.5" stroke-linejoin="round"/>`;
       data.forEach((v, i) => {
-        const suffix = metric === "waste" ? "%" : "";
+        const prefix = metric === "waste" ? "RM " : "";
         // visible dot
         svg += `<circle class="pt" cx="${xAt(i)}" cy="${yAt(v)}" r="4" fill="${colors[s]}" stroke="#fff" stroke-width="1.5"/>`;
         // large invisible hover target + tooltip
         svg += `<circle class="hit" cx="${xAt(i)}" cy="${yAt(v)}" r="14" fill="transparent"
-          data-x="${xAt(i)}" data-y="${yAt(v)}" data-label="${WEEKLY.days[i]} · ${labels[s]}" data-val="${v}${suffix}"></circle>`;
+          data-x="${xAt(i)}" data-y="${yAt(v)}" data-label="${WEEKLY.days[i]} · ${labels[s]}" data-val="${prefix}${v}"></circle>`;
       });
     });
   } else {
