@@ -429,13 +429,17 @@ const RCAT = { DOUGH:"#c47d15", MEAT:"#c0392b", PREMIX:"#7a5bb0", SAUCES:"#2f7d5
 
 async function loadRecipes() {
   try {
-    const inl = JSON.parse(document.getElementById("recipedata").textContent||"{}");
-    if (inl && inl.recipes) { RECIPES = inl.recipes; }
-    else { const res = await fetch("recipe_standard.json", { cache:"no-store" }); RECIPES = (await res.json()).recipes; }
+    // recipe data now lives in data.js as window.__RECIPES__ (moved out of the HTML during the file split)
+    if (window.__RECIPES__ && window.__RECIPES__.recipes) { RECIPES = window.__RECIPES__.recipes; }
+    else {
+      const el = document.getElementById("recipedata");
+      if (el) { const inl = JSON.parse(el.textContent||"{}"); if (inl && inl.recipes) RECIPES = inl.recipes; }
+    }
+    if (!RECIPES.length) { const res = await fetch("recipe_standard.json", { cache:"no-store" }); RECIPES = (await res.json()).recipes || []; }
   } catch(e) {
-    document.getElementById("rgrid").innerHTML = `<div class="empty">No recipe data.</div>`;
-    return;
+    console.warn("loadRecipes failed", e);
   }
+  if (!RECIPES.length) { document.getElementById("rgrid").innerHTML = `<div class="empty">No recipe data.</div>`; return; }
   drawRTabs(); drawRecipes();
 }
 
