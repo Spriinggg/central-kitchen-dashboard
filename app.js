@@ -642,13 +642,20 @@ function downloadCSV(filename, head, rows){
 }
 // ---- DEMAND (Sales Orders CK -> outlets) ----
 let DEMRAW=null;
+function demandView(){
+  // returns the aggregated view whether DEMRAW holds raw lines (this session)
+  // or a stored aggregate (loaded from Supabase — kept small to avoid save timeouts)
+  if(DEMRAW && DEMRAW.lines && DEMRAW.lines.length) return window.DEM.build(DEMRAW);
+  if(DEMRAW && DEMRAW.agg) return DEMRAW.agg;
+  return null;
+}
 function renderDemand(){
   const el=document.getElementById("demandList"); if(!el) return;
-  if(!DEMRAW || !DEMRAW.lines || !DEMRAW.lines.length){
+  const b=demandView();
+  if(!b || !b.byOutlet || !b.byOutlet.length){
     el.innerHTML='<div class="src-badge">○ No demand data yet — upload the RMS Sales Order (batch) export.</div>';
     return;
   }
-  const b=window.DEM.build(DEMRAW);
   const rm=n=>"RM "+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
   const q=((document.getElementById("demSearch")||{}).value||"").toLowerCase().trim();
   let outlets=b.byOutlet, prods=b.byProduct;
@@ -676,9 +683,20 @@ function renderDemand(){
   h+='</div></div>';
   el.innerHTML=h;
 }
-function demExportCSV(){ if(!DEMRAW||!DEMRAW.lines||!DEMRAW.lines.length){ alert("No demand data to export."); return; }
-  const rows=DEMRAW.lines.map(l=>[l.date,l.outlet,l.code,l.desc,l.qty,l.uom,l.value,l.so]);
-  downloadCSV("outlet_demand.csv",["Date","Outlet","ItemCode","ItemDesc","Qty","UOM","Value_RM","SalesOrder"],rows);
+function demExportCSV(){
+  if(DEMRAW && DEMRAW.lines && DEMRAW.lines.length){
+    const rows=DEMRAW.lines.map(l=>[l.date,l.outlet,l.code,l.desc,l.qty,l.uom,l.value,l.so]);
+    downloadCSV("outlet_demand.csv",["Date","Outlet","ItemCode","ItemDesc","Qty","UOM","Value_RM","SalesOrder"],rows);
+    return;
+  }
+  // loaded from a stored aggregate (no raw lines) — export the product-level summary instead
+  const b=demandView();
+  if(b && b.byProduct && b.byProduct.length){
+    const rows=b.byProduct.map(p=>[p.desc,p.code,Math.round(p.qty),Math.round(p.value),p.orders]);
+    downloadCSV("outlet_demand_summary.csv",["Product","ItemCode","TotalQty","Value_RM","Orders"],rows);
+    return;
+  }
+  alert("No demand data to export.");
 }
 
 // ---- JPC (Job Production Material Costing) — real cost-per-unit variance ----
@@ -939,14 +957,17 @@ async function ckProcessUploaded(list){
     // ---- DEMAND (Sales Order) files ----
     if(demFiles.length){
       const newD=window.DEM.parseFiles(demFiles);
-      DEMRAW = DEMRAW ? window.DEM.mergeRaw(DEMRAW, newD) : newD;
+      // merge with existing raw lines only if this session has them; a fresh session
+      // loads a stored aggregate (no lines), so a new upload replaces it (full-range snapshot)
+      DEMRAW = (DEMRAW && DEMRAW.lines) ? window.DEM.mergeRaw(DEMRAW, newD) : newD;
       renderDemand();
       const db=window.DEM.build(DEMRAW);
       parts.push("Demand: "+db.lineCount+" lines · "+db.byOutlet.length+" outlets · RM "+Math.round(db.totalValue).toLocaleString()+" · "+db.dateFrom+"→"+db.dateTo);
       if(SB){
-        DEMRAW.__uploadedBy=CURRENT_USER||""; DEMRAW.__uploadedAt=nowIso;
-        noteUpload(DEMRAW.__uploadedBy, DEMRAW.__uploadedAt); renderDataInfo();
-        const {error}=await SB.from("ck_state").upsert({id:"demand",payload:DEMRAW,updated_at:nowIso});
+        // store only the aggregated view (small) — raw 37k+ lines time out the DB write
+        const demStore={ agg:db, __agg:true, __uploadedBy:CURRENT_USER||"", __uploadedAt:nowIso };
+        noteUpload(demStore.__uploadedBy, demStore.__uploadedAt); renderDataInfo();
+        const {error}=await SB.from("ck_state").upsert({id:"demand",payload:demStore,updated_at:nowIso});
         if(error) parts.push("⚠ Demand save failed: "+error.message);
       }
     }
@@ -1036,7 +1057,7 @@ async function loadDemandFromSupabase(){
   try{
     const {data,error}=await SB.from("ck_state").select("payload").eq("id","demand").maybeSingle();
     if(error) throw error;
-    if(data && data.payload && data.payload.lines){
+    if(data && data.payload && (data.payload.agg || data.payload.lines)){
       DEMRAW=data.payload; renderDemand();
       if(DEMRAW.__uploadedAt) noteUpload(DEMRAW.__uploadedBy||"", DEMRAW.__uploadedAt);
       renderDataInfo();
