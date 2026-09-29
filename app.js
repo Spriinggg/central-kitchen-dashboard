@@ -680,6 +680,52 @@ function demExportCSV(){ if(!DEMRAW||!DEMRAW.lines||!DEMRAW.lines.length){ alert
   const rows=DEMRAW.lines.map(l=>[l.date,l.outlet,l.code,l.desc,l.qty,l.uom,l.value,l.so]);
   downloadCSV("outlet_demand.csv",["Date","Outlet","ItemCode","ItemDesc","Qty","UOM","Value_RM","SalesOrder"],rows);
 }
+
+// ---- JPC (Job Production Material Costing) — real cost-per-unit variance ----
+let JPCRAW=null;
+function renderJPC(){
+  const el=document.getElementById("jpcList"); if(!el) return;
+  if(!JPCRAW || !JPCRAW.jobs || !JPCRAW.jobs.length){
+    el.innerHTML='<div class="src-badge">○ No job-costing data yet — upload the Job Production Material Costing report.</div>';
+    return;
+  }
+  const b=window.JPC.build(JPCRAW);
+  const rm=n=>"RM "+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  const rm2=n=>"RM "+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const q=((document.getElementById("jpcSearch")||{}).value||"").toLowerCase().trim();
+  const dspan=b.dateFrom===b.dateTo?(b.dateFrom||""):((b.dateFrom||"")+" → "+(b.dateTo||""));
+  let prods=b.products, alerts=b.alerts;
+  if(q){ prods=prods.filter(p=>p.product.toLowerCase().indexOf(q)>=0); alerts=alerts.filter(a=>a.product.toLowerCase().indexOf(q)>=0); }
+  let h='<div class="src-badge live">● from Job Production Material Costing · '+dspan+'</div>';
+  h+='<div style="font-size:11px;color:var(--text-mut);margin:2px 0 8px;">Variance = each job’s cost per unit produced vs its product’s median. Flags jobs ≥25% off the norm to review (uses cost in RM, so mixed units don’t distort it).</div>';
+  h+='<div style="display:flex;gap:22px;flex-wrap:wrap;margin:0 0 12px;">';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Jobs</p><p style="font-size:21px;font-weight:700;margin:0">'+b.jobCount+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Products</p><p style="font-size:21px;font-weight:700;margin:0">'+b.productCount+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Total material cost</p><p style="font-size:21px;font-weight:700;margin:0">'+rm(b.totalCost)+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Jobs flagged</p><p style="font-size:21px;font-weight:700;margin:0;color:'+(alerts.length?"var(--amber)":"var(--green)")+'">'+alerts.length+'</p></div>';
+  h+='</div>';
+  h+='<div class="grid2">';
+  // flagged jobs
+  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px">Jobs to review (cost/unit vs product norm)</div>';
+  if(!alerts.length) h+='<div class="empty">No jobs deviate ≥25% — production cost is consistent.</div>';
+  alerts.slice(0,10).forEach(a=>{ const up=a.dev>0; const col=up?"var(--red)":"var(--green)";
+    h+='<div class="line"><span style="max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+a.product+'<br><span style="font-size:10.5px;color:var(--text-mut)">'+a.job+' · '+(a.date||"")+'</span></span>'
+      +'<span style="text-align:right;font-weight:600;color:'+col+'">'+(up?"+":"")+Math.round(a.dev)+'%<br><span style="font-size:10.5px;color:var(--text-mut);font-weight:400">'+rm2(a.cpu)+'/'+((a.unit||"").toLowerCase()||"unit")+' vs '+rm2(a.median)+'</span></span></div>'; });
+  h+='</div>';
+  // per-product breakdown
+  h+='<div><div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px">By product (median cost per unit)</div>';
+  if(!prods.length) h+='<div class="empty">No match</div>';
+  prods.slice(0,14).forEach(p=>{
+    h+='<div class="line"><span style="max-width:52%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.product+'<br><span style="font-size:10.5px;color:var(--text-mut)">'+p.jobs+' jobs · '+Math.round(p.totalOut).toLocaleString()+' '+((p.unit||"").toLowerCase())+'</span></span>'
+      +'<span style="text-align:right;font-weight:600">'+rm2(p.medianCPU)+'<br><span style="font-size:10.5px;color:var(--text-mut);font-weight:400">'+rm(p.totalCost)+' total</span></span></div>'; });
+  h+='</div></div>';
+  el.innerHTML=h;
+}
+function jpcExportCSV(){ if(!JPCRAW||!JPCRAW.jobs||!JPCRAW.jobs.length){ alert("No job-costing data to export."); return; }
+  const b=window.JPC.build(JPCRAW); const rows=[];
+  b.products.forEach(p=>p.rows.forEach(r=>rows.push([p.product,r.job,r.date,r.status,Math.round(r.out),r.cost.toFixed(2),r.cpu.toFixed(3),p.medianCPU.toFixed(3),Math.round(r.dev)+"%"])));
+  downloadCSV("job_production_costing.csv",["Product","JobNo","Date","Status","Output","TotalCost_RM","CostPerUnit","MedianCostPerUnit","DeviationPct"],rows);
+}
 // ---- PKT (USFOOD warehouse) — real WMS dispatches, MY/SG separate ----
 let PKTRAW=null, pktRegion="MY", pktLogPage=0; const PKT_LOG_PAGE=50;
 function pktLogPrev(){ if(pktLogPage>0){ pktLogPage--; renderPKT(); } }
@@ -847,13 +893,14 @@ async function ckProcessUploaded(list){
   status.textContent="Reading "+list.length+" file(s)…";
   const skipped=[];
   try{
-    const ckFiles=[], pktFiles=[], demFiles=[];
+    const ckFiles=[], pktFiles=[], demFiles=[], jpcFiles=[];
     for(const f of list){
       if(!isSupportedSpreadsheet(f)){ skipped.push(f.name+" — not a supported spreadsheet file (.xlsx/.xls/.csv)"); continue; }
       let rf;
       try{ rf=await ckReadFile(f); }
       catch(e){ skipped.push(f.name+" — "+(e&&e.message||"could not be read")); continue; }
       if(window.DEM && window.DEM.isDEM([rf])) demFiles.push(rf);
+      else if(window.JPC && window.JPC.isJPC([rf])) jpcFiles.push(rf);
       else if(window.PKT && window.PKT.isPKT([rf])) pktFiles.push(rf);
       else ckFiles.push(rf);
     }
@@ -904,9 +951,24 @@ async function ckProcessUploaded(list){
       }
     }
 
+    // ---- JPC (Job Production Material Costing) files ----
+    if(jpcFiles.length){
+      const newJ=window.JPC.parseFiles(jpcFiles);
+      JPCRAW = JPCRAW ? window.JPC.mergeRaw(JPCRAW, newJ) : newJ;
+      renderJPC();
+      const jb=window.JPC.build(JPCRAW);
+      parts.push("Job Costing: "+jb.jobCount+" jobs · "+jb.productCount+" products · RM "+Math.round(jb.totalCost).toLocaleString()+" · "+jb.alerts.length+" flagged · "+jb.dateFrom+"→"+jb.dateTo);
+      if(SB){
+        JPCRAW.__uploadedBy=CURRENT_USER||""; JPCRAW.__uploadedAt=nowIso;
+        noteUpload(JPCRAW.__uploadedBy, JPCRAW.__uploadedAt); renderDataInfo();
+        const {error}=await SB.from("ck_state").upsert({id:"jobcost",payload:JPCRAW,updated_at:nowIso});
+        if(error) parts.push("⚠ Job Costing save failed: "+error.message);
+      }
+    }
+
     const skipHtml = skipped.length ? '<div style="color:var(--amber);margin-top:6px;">⚠ Skipped '+skipped.length+' file(s):<br>'+skipped.map(s=>"• "+s).join("<br>")+'</div>' : "";
-    if(!ckFiles.length && !pktFiles.length && !demFiles.length){
-      status.innerHTML='<span style="color:var(--amber)">No recognised ERP / PKT / Sales Order files in that selection.</span>'+skipHtml;
+    if(!ckFiles.length && !pktFiles.length && !demFiles.length && !jpcFiles.length){
+      status.innerHTML='<span style="color:var(--amber)">No recognised ERP / PKT / Sales Order / Job Costing files in that selection.</span>'+skipHtml;
       return;
     }
     const saved = SB ? " · saved & shared ✓" : " · (Supabase not connected)";
@@ -920,6 +982,8 @@ async function ckProcessUploaded(list){
   const pe=document.getElementById("pktExport"); if(pe) pe.addEventListener("click",pktExportCSV);
   const ds=document.getElementById("demSearch"); if(ds) ds.addEventListener("input",renderDemand);
   const de=document.getElementById("demExport"); if(de) de.addEventListener("click",demExportCSV);
+  const js=document.getElementById("jpcSearch"); if(js) js.addEventListener("input",renderJPC);
+  const je=document.getElementById("jpcExport"); if(je) je.addEventListener("click",jpcExportCSV);
 })();
 document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
 document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
@@ -981,6 +1045,20 @@ async function loadDemandFromSupabase(){
   }catch(e){ console.warn("demand load failed",e); }
   return false;
 }
+async function loadJPCFromSupabase(){
+  if(!SB) return false;
+  try{
+    const {data,error}=await SB.from("ck_state").select("payload").eq("id","jobcost").maybeSingle();
+    if(error) throw error;
+    if(data && data.payload && data.payload.jobs){
+      JPCRAW=data.payload; renderJPC();
+      if(JPCRAW.__uploadedAt) noteUpload(JPCRAW.__uploadedBy||"", JPCRAW.__uploadedAt);
+      renderDataInfo();
+      return true;
+    }
+  }catch(e){ console.warn("job-costing load failed",e); }
+  return false;
+}
 let __inited=false;
 function setLoadState(msg){ const el=document.getElementById("loadState"); if(!el) return; if(msg){ el.textContent=msg; el.style.display=""; } else { el.style.display="none"; } }
 async function initApp(){
@@ -989,8 +1067,10 @@ async function initApp(){
   const ok=await loadFromSupabase();
   const okp=await loadPKTFromSupabase();
   const okd=await loadDemandFromSupabase();
-  if(ok||okp||okd){ setLoadState(""); }
-  else { setLoadState("No data loaded yet — upload the ERP / PKT / Sales Order files below to populate the dashboard."); }
+  const okj=await loadJPCFromSupabase();
+  renderJPC();  // show empty-state message if no job-costing data yet
+  if(ok||okp||okd||okj){ setLoadState(""); }
+  else { setLoadState("No data loaded yet — upload the ERP / PKT / Sales Order / Job Costing files below to populate the dashboard."); }
 }
 function showApp(){ document.getElementById("loginOverlay").style.display="none"; const w=document.querySelector(".wrap"); if(w) w.style.display=""; initApp(); }
 function showLogin(){ document.getElementById("loginOverlay").style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }

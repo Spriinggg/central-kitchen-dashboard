@@ -277,27 +277,70 @@
 /* ===== DEMAND (Sales Orders CK -> outlets) parser ===== */
 (function(root){
   function clean(s){return String(s==null?"":s).replace(/\s+/g," ").trim();}
-  function num(x){var n=Number(x);return isNaN(n)?0:n;}
+  function num(x){ if(x==null)return 0; var n=Number(String(x).replace(/,/g,"")); return isNaN(n)?0:n; }
   var MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
-  function dnorm(s){ if(!s)return""; s=clean(s); var m=s.match(/^(\d{1,2})[- ]([A-Za-z]{3})[- ](\d{4})$/); if(m){var mo=MON[m[2].toLowerCase()];if(mo!=null)return m[3]+"-"+String(mo+1).padStart(2,"0")+"-"+String(+m[1]).padStart(2,"0");} var d=new Date(s); if(!isNaN(d))return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); return ""; }
-  function detect(head){ var H=(head||[]).map(function(x){return clean(x).toUpperCase();}); return H.indexOf("SALESORDERNO")>=0 && H.indexOf("ITEMDESC")>=0 && H.indexOf("QUANTITY")>=0; }
-  function colmap(head){ var m={}; (head||[]).forEach(function(h,i){m[clean(h).toUpperCase()]=i;}); return m; }
-  function sgOutlet(s){ return /\bSG\b|singapore/i.test(String(s||"")); }
-  function isDEM(files){ return (files||[]).some(function(f){return (f.sheets||[]).some(function(sh){return detect((sh.rows||[])[0]);});}); }
+  // normalised header key: strips spaces, dots, punctuation so "Sales Order No." == "SalesOrderNo"
+  function K(s){ return clean(s).toUpperCase().replace(/[^A-Z0-9]/g,""); }
+  function dnorm(s){ if(!s)return""; s=clean(s);
+    var dm=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(dm){ return dm[3]+"-"+String(+dm[2]).padStart(2,"0")+"-"+String(+dm[1]).padStart(2,"0"); }
+    var m=s.match(/^(\d{1,2})[- ]([A-Za-z]{3})[- ](\d{4})$/); if(m){var mo=MON[m[2].toLowerCase()];if(mo!=null)return m[3]+"-"+String(mo+1).padStart(2,"0")+"-"+String(+m[1]).padStart(2,"0");}
+    var d=new Date(s); if(!isNaN(d))return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); return ""; }
+  // find the header row within the first few rows (reports have a title row above the header)
+  function findHeader(rows, needs){ for(var i=0;i<Math.min(rows.length,5);i++){ var H=(rows[i]||[]).map(K); if(needs.every(function(n){return H.indexOf(n)>=0;})) return i; } return -1; }
+  function colmap(head){ var m={}; (head||[]).forEach(function(h,i){m[K(h)]=i;}); return m; }
+  function sgOutlet(s){ return /\bSG\b|singapore|pte\s*ltd/i.test(String(s||"")); }
+  function sgCode(s){ return /^SG/i.test(clean(s)); }
+  // ---- format detection ----
+  // OLD RMS format: single sheet, header has SALESORDERNO + ITEMDESC + QUANTITY
+  function isOldSheet(rows){ return findHeader(rows,["SALESORDERNO","ITEMDESC","QUANTITY"])>=0; }
+  // NEW Reports format: a Detail sheet (SALESORDERNO + ITEMNAME + QUANTITY)
+  function isNewDetail(rows){ return findHeader(rows,["SALESORDERNO","ITEMNAME","QUANTITY"])>=0; }
+  function isNewSummary(rows){ return findHeader(rows,["SALESORDERNO","DELIVERYDATE"])>=0 && findHeader(rows,["SALESORDERNO","CUSTOMERBRANCHNAME"])>=0; }
+  function isDEM(files){ return (files||[]).some(function(f){ var shs=f.sheets||[]; return shs.some(function(sh){var r=sh.rows||[]; return isOldSheet(r)||isNewDetail(r);}); }); }
+
   function parseFiles(files){
     var raw={lines:[],keys:{},dates:{}};
-    (files||[]).forEach(function(f){ (f.sheets||[]).forEach(function(sh){
-      var rows=sh.rows||[]; if(!rows.length||!detect(rows[0]))return; var C=colmap(rows[0]);
-      var gi=function(r,k){var i=C[k];return i==null?null:r[i];};
-      rows.slice(1).forEach(function(r){ if(!r||!r[C["SALESORDERNO"]])return;
-        var so=clean(gi(r,"SALESORDERNO")),code=clean(gi(r,"ITEMCODE")),desc=clean(gi(r,"ITEMDESC")),qty=num(gi(r,"QUANTITY")),date=dnorm(gi(r,"DELIVEREDDATE"));
-        var outlet=clean(gi(r,"DEBTORBRANCHCODE"))||clean(gi(r,"DEBTORNAME")),uom=clean(gi(r,"UOM")),val=num(gi(r,"SUBTOTAL"));
-        if(sgOutlet(outlet))return;
-        var key=[so,code,desc,qty,date].join("|"); if(raw.keys[key])return; raw.keys[key]=1;
-        raw.lines.push({date:date,outlet:outlet,code:code,desc:desc,qty:qty,uom:uom,value:val,so:so});
-        if(date)raw.dates[date]=1;
+    function push(line){ var key=[line.so,line.code,line.desc,line.qty,line.date].join("|"); if(raw.keys[key])return; raw.keys[key]=1; raw.lines.push(line); if(line.date)raw.dates[line.date]=1; }
+    (files||[]).forEach(function(f){
+      var sheets=f.sheets||[];
+      // build a summary map (SO -> {outlet,date}) from any NEW summary sheet in this file
+      var meta={};
+      sheets.forEach(function(sh){ var rows=sh.rows||[]; if(!isNewSummary(rows))return;
+        var hi=findHeader(rows,["SALESORDERNO","DELIVERYDATE"]); var C=colmap(rows[hi]);
+        var gi=function(r,k){var i=C[k];return i==null?null:r[i];};
+        rows.slice(hi+1).forEach(function(r){ if(!r)return; var so=clean(gi(r,"SALESORDERNO")); if(!so)return;
+          var outlet=clean(gi(r,"CUSTOMERBRANCHNAME"))||clean(gi(r,"CUSTOMERNAME"));
+          var cbc=clean(gi(r,"CUSTOMERBRANCHCODE"));
+          var date=dnorm(gi(r,"DELIVERYDATE"))||dnorm(gi(r,"CREATEDDATE"));
+          meta[so]={outlet:outlet,code:cbc,date:date,cust:clean(gi(r,"CUSTOMERNAME"))};
+        });
       });
-    });});
+      sheets.forEach(function(sh){
+        var rows=sh.rows||[];
+        // ---- NEW Detail sheet (join with summary meta) ----
+        if(isNewDetail(rows)){
+          var hi=findHeader(rows,["SALESORDERNO","ITEMNAME","QUANTITY"]); var C=colmap(rows[hi]);
+          var gi=function(r,k){var i=C[k];return i==null?null:r[i];};
+          rows.slice(hi+1).forEach(function(r){ if(!r)return; var so=clean(gi(r,"SALESORDERNO")); if(!so)return;
+            var m=meta[so]||{}; if(sgCode(m.code)||sgOutlet(m.cust))return;
+            push({date:m.date||"",outlet:m.outlet||so,code:clean(gi(r,"ITEMCODE")),desc:clean(gi(r,"ITEMNAME")),
+                  qty:num(gi(r,"QUANTITY")),uom:clean(gi(r,"UOM")),value:num(gi(r,"SUBTOTAL")),so:so});
+          });
+          return;
+        }
+        // ---- OLD single-sheet format ----
+        if(isOldSheet(rows)){
+          var hi2=findHeader(rows,["SALESORDERNO","ITEMDESC","QUANTITY"]); var C2=colmap(rows[hi2]);
+          var g2=function(r,k){var i=C2[k];return i==null?null:r[i];};
+          rows.slice(hi2+1).forEach(function(r){ if(!r||!clean(g2(r,"SALESORDERNO")))return;
+            var outlet=clean(g2(r,"DEBTORBRANCHCODE"))||clean(g2(r,"DEBTORNAME"));
+            if(sgOutlet(outlet)||sgCode(outlet))return;
+            push({date:dnorm(g2(r,"DELIVEREDDATE")),outlet:outlet,code:clean(g2(r,"ITEMCODE")),desc:clean(g2(r,"ITEMDESC")),
+                  qty:num(g2(r,"QUANTITY")),uom:clean(g2(r,"UOM")),value:num(g2(r,"SUBTOTAL")),so:clean(g2(r,"SALESORDERNO"))});
+          });
+        }
+      });
+    });
     return raw;
   }
   function mergeRaw(a,b){ if(!a)return b; if(!b)return a; var o={lines:a.lines.slice(),keys:Object.assign({},a.keys),dates:Object.assign({},a.dates)};
@@ -315,5 +358,87 @@
       totalValue:lines.reduce(function(s,l){return s+l.value;},0), lineCount:lines.length, productCount:Object.keys(byProd).length,
       dateFrom:dates[0]||null, dateTo:dates[dates.length-1]||null };
   }
-  root.parseFiles=parseFiles; root.mergeRaw=mergeRaw; root.build=build; root.detect=detect; root.isDEM=isDEM; root.nkey=nkey;
+  root.parseFiles=parseFiles; root.mergeRaw=mergeRaw; root.build=build; root.isDEM=isDEM; root.nkey=nkey;
 })(window.DEM = window.DEM || {});
+
+// ---------- JPC (Job Production Material Costing) pipeline ----------
+/* Reads the "Job Production Material Costing" report: each job = one header row
+   (Job No, Date, Status, Product, Batch Qty, Actual Yield) followed by ingredient
+   rows and a "Total Cost" row. We derive a per-product cost-per-output baseline
+   (median) and flag jobs whose cost/unit deviates far from it = real usage variance,
+   independent of mixed ingredient units (PCS/KG/CTN) since cost is always RM. */
+(function(root){
+  function clean(s){return String(s==null?"":s).replace(/\s+/g," ").trim();}
+  function num(x){ if(x==null)return 0; var n=Number(String(x).replace(/,/g,"")); return isNaN(n)?0:n; }
+  function K(s){ return clean(s).toUpperCase().replace(/[^A-Z0-9]/g,""); }
+  function findHeader(rows, needs){ for(var i=0;i<Math.min(rows.length,5);i++){ var H=(rows[i]||[]).map(K); if(needs.every(function(n){return H.indexOf(n)>=0;})) return i; } return -1; }
+  function colmap(head){ var m={}; (head||[]).forEach(function(h,i){m[K(h)]=i;}); return m; }
+  function dnorm(s){ if(!s)return""; s=clean(s); var dm=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(dm)return dm[3]+"-"+String(+dm[2]).padStart(2,"0")+"-"+String(+dm[1]).padStart(2,"0"); var d=new Date(s); if(!isNaN(d))return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); return ""; }
+  // "480.000 PKT" -> {qty:480, unit:"PKT"} ; "48.000 PCS / 0.000" -> {qty:48, unit:"PCS"}
+  function qtyUnit(s){ s=clean(s); var m=s.match(/^([\d.,]+)\s*([A-Za-z]+)?/); return m?{qty:num(m[1]),unit:(m[2]||"").toUpperCase()}:{qty:0,unit:""}; }
+  function isJPC(files){ return (files||[]).some(function(f){return (f.sheets||[]).some(function(sh){ return findHeader(sh.rows||[],["JOBNO","PRODUCT","QTYUSED"])>=0; });}); }
+
+  function parseFiles(files){
+    var raw={jobs:[],keys:{}};
+    (files||[]).forEach(function(f){ (f.sheets||[]).forEach(function(sh){
+      var rows=sh.rows||[]; var hi=findHeader(rows,["JOBNO","PRODUCT","QTYUSED"]); if(hi<0)return;
+      var C=colmap(rows[hi]); var gi=function(r,k){var i=C[k];return i==null?null:r[i];};
+      var cur=null;
+      rows.slice(hi+1).forEach(function(r){ if(!r)return;
+        var jobNo=clean(gi(r,"JOBNO"));
+        var totLbl=clean(gi(r,"UNITPRICELOCAL"))||clean(r[C["UNITPRICELOCAL"]]);
+        if(jobNo){ // new job header row
+          cur={ job:jobNo, date:dnorm(gi(r,"JOBDATE")), status:clean(gi(r,"STATUS")),
+                product:clean(gi(r,"PRODUCT")), batchQty:num(gi(r,"BATCHQTY")),
+                yield:qtyUnit(gi(r,"ACTUALYIELD")), ingredients:[], totalCost:0 };
+          raw.jobs.push(cur);
+        }
+        // "Total Cost" marker row
+        var tc=clean(gi(r,"UNITPRICELOCAL"));
+        if(cur && /total\s*cost/i.test(tc)){ cur.totalCost=num(gi(r,"SUBTOTALLOCAL")); return; }
+        // ingredient row (has an Ingredients value)
+        var ing=clean(gi(r,"INGREDIENTS"));
+        if(cur && ing){ var qu=qtyUnit(gi(r,"QTYUSED"));
+          cur.ingredients.push({ name:ing, qty:qu.qty, unit:qu.unit, subtotal:num(gi(r,"SUBTOTALLOCAL")) });
+        }
+      });
+    });});
+    // fill totalCost from ingredient subtotals if the Total Cost row was missing
+    raw.jobs.forEach(function(j){ if(!j.totalCost){ j.totalCost=j.ingredients.reduce(function(s,x){return s+x.subtotal;},0); } });
+    raw.jobs.forEach(function(j){ raw.keys[j.job]=1; });
+    return raw;
+  }
+  function mergeRaw(a,b){ if(!a)return b; if(!b)return a; var o={jobs:a.jobs.slice(),keys:Object.assign({},a.keys)};
+    (b.jobs||[]).forEach(function(j){ if(o.keys[j.job])return; o.keys[j.job]=1; o.jobs.push(j); }); return o; }
+  function median(arr){ if(!arr.length)return 0; var s=arr.slice().sort(function(a,b){return a-b;}); var m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+
+  function build(raw){
+    var jobs=(raw&&raw.jobs)||[]; var byProd={}; var dates=[];
+    jobs.forEach(function(j){
+      if(j.date)dates.push(j.date);
+      var out=j.yield&&j.yield.qty?j.yield.qty:0;      // units produced
+      var cpu=out?j.totalCost/out:0;                    // cost per unit output (RM)
+      var p=byProd[j.product]||(byProd[j.product]={product:j.product,jobs:0,totalOut:0,totalCost:0,unit:(j.yield&&j.yield.unit)||"",cpus:[],rows:[]});
+      p.jobs++; p.totalOut+=out; p.totalCost+=j.totalCost; p.cpus.push(cpu);
+      p.rows.push({job:j.job,date:j.date,status:j.status,out:out,cost:j.totalCost,cpu:cpu,ingredients:j.ingredients});
+    });
+    var products=Object.keys(byProd).map(function(k){ var p=byProd[k];
+      var med=median(p.cpus.filter(function(x){return x>0;}));
+      p.medianCPU=med; p.avgCPU=p.totalOut?p.totalCost/p.totalOut:0;
+      // deviation of each job vs product median cost/unit
+      p.rows.forEach(function(row){ row.dev=med?((row.cpu-med)/med*100):0; });
+      return p;
+    }).sort(function(a,b){return b.totalCost-a.totalCost;});
+    // flagged jobs: |deviation| >= 25% from that product's median cost/unit (and product has >=3 jobs for a stable baseline)
+    var alerts=[];
+    products.forEach(function(p){ if(p.jobs<3)return; p.rows.forEach(function(row){
+      if(row.out>0 && Math.abs(row.dev)>=25){ alerts.push({product:p.product,job:row.job,date:row.date,cpu:row.cpu,median:p.medianCPU,dev:row.dev,cost:row.cost,unit:p.unit}); }
+    });});
+    alerts.sort(function(a,b){return Math.abs(b.dev)-Math.abs(a.dev);});
+    dates.sort();
+    return { products:products, alerts:alerts, jobCount:jobs.length, productCount:products.length,
+             totalCost:jobs.reduce(function(s,j){return s+j.totalCost;},0),
+             dateFrom:dates[0]||null, dateTo:dates[dates.length-1]||null };
+  }
+  root.parseFiles=parseFiles; root.mergeRaw=mergeRaw; root.build=build; root.isJPC=isJPC;
+})(window.JPC = window.JPC || {});

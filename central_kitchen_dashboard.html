@@ -146,6 +146,17 @@
     <div id="demandList"></div>
   </div>
 
+  <div class="card" id="jpcCard" style="margin-top:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <p class="card-title" style="margin:0;">🏭 Production cost variance · Job Costing</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="jpcSearch" type="text" placeholder="Search product…" style="font-size:12px;padding:7px 12px;border-radius:20px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.6);flex:1 1 160px;min-width:0;outline:none;">
+        <button id="jpcExport" class="nav-btn" style="cursor:pointer;font-size:12px;padding:6px 12px;white-space:nowrap;">⬇ Export CSV</button>
+      </div>
+    </div>
+    <div id="jpcList"></div>
+  </div>
+
   <div class="card" style="margin-top:14px;">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <p class="card-title" style="margin:0;">📈 Weekly trend</p>
@@ -227,8 +238,9 @@
             &nbsp;&nbsp;– <code>REPORT_Stock_Balance_(Stock_Value_By_Date)_(Raw_Materials)</code><br>
             &nbsp;&nbsp;– <code>REPORT_Job_Production_Variance_(Output)</code><br>
             &nbsp;&nbsp;– <code>REPORT_Wastage_Reports</code><br>
+            &nbsp;&nbsp;– <code>REPORT_Job_Production_Material_Costing</code> (for production cost variance)<br>
             • <b>PKT (USFOOD):</b> Frozen + Ambient — Stock Movement + Stock Balance (daily)<br>
-            • <b>Demand:</b> RMS Sales Order (batch) export
+            • <b>Demand:</b> <code>REPORT_Sales_Order_Listing</code> (By Delivery Date or By Created Date — full outlet demand)
           </div>
           <div style="margin-top:6px;"><b>Stock Balance is a snapshot, not a daily log</b> — the system only keeps the <i>earliest</i> upload as the opening balance and the <i>latest</i> upload as the closing balance. Once an opening balance is set, you only need to upload the most recent Stock Balance each time (not every day in between) for the closing side to stay current.</div>
           <div style="margin-top:6px;">Data <b>accumulates</b> — new uploads add to what is there, they do not wipe it. Everything is saved to the shared database, so anyone who signs in sees the same up-to-date data on any device.</div>
@@ -256,6 +268,7 @@
         <b>Month-over-month</b> — this month vs last month for production, waste, and cost, with ▲▼ arrows.<br>
         <b>PKT Logistics</b> — dispatches from the USFOOD warehouse to outlets. Use the <b>Malaysia / Singapore</b> toggle to switch region (kept separate). Includes warehouse stock on-hand and a full dispatch log.<br>
         <b>Outlet Demand</b> — what outlets ordered from the Central Kitchen (from sales orders).<br>
+        <b>Production cost variance (Job Costing)</b> — for each product it works out the typical cost of raw material per unit produced (the median across all jobs), then flags any job that cost 25% or more above/below that norm. High numbers = a batch that used more material than usual, worth checking. Uses cost in RM so mixed units (PCS/KG/CTN) don't distort it.<br>
         <b>Weekly trend</b> — production, waste, or variance over the weeks.
       </div>
     </div>
