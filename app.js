@@ -992,9 +992,21 @@ async function ckProcessUploaded(list){
       status.innerHTML='<span style="color:var(--amber)">No recognised ERP / PKT / Sales Order / Job Costing files in that selection.</span>'+skipHtml;
       return;
     }
-    const saved = SB ? " · saved & shared ✓" : " · (Supabase not connected)";
-    status.innerHTML='<span style="color:var(--green)">✓ '+parts.join(" &nbsp;|&nbsp; ")+saved+'</span>'+skipHtml;
-  }catch(err){ status.innerHTML='<span style="color:var(--red)">Error: '+(err&&err.message||err)+'</span>'+(skipped.length?'<div style="color:var(--amber);margin-top:6px;">⚠ Also skipped: '+skipped.join("; ")+'</div>':""); console.error(err); }
+    // colour each part by outcome: a failure/warning shows RED so it can't be mistaken for success
+    const isFail = p => /fail|⚠|error|timeout/i.test(p);
+    const anyFail = parts.some(isFail) || skipped.length > 0;
+    const body = parts.map(p => isFail(p)
+      ? '<span style="color:var(--red);font-weight:600">'+p+'</span>'
+      : '<span style="color:var(--green)">'+p+'</span>').join('<span style="color:var(--text-mut)"> &nbsp;|&nbsp; </span>');
+    if(anyFail){
+      // do NOT claim "saved" when something failed
+      const note = SB ? '' : '<span style="color:var(--amber)"> · (Supabase not connected)</span>';
+      status.innerHTML='<div style="color:var(--red);font-weight:700;margin-bottom:4px">⚠ Completed with problems — check the red items below:</div>'+body+note+skipHtml;
+    } else {
+      const saved = SB ? '<span style="color:var(--green)"> · saved & shared ✓</span>' : '<span style="color:var(--amber)"> · (Supabase not connected)</span>';
+      status.innerHTML='<span style="color:var(--green);font-weight:600">✓ </span>'+body+saved+skipHtml;
+    }
+  }catch(err){ status.innerHTML='<span style="color:var(--red);font-weight:700">✕ Error: '+(err&&err.message||err)+'</span>'+(skipped.length?'<div style="color:var(--amber);margin-top:6px;">⚠ Also skipped: '+skipped.join("; ")+'</div>':""); console.error(err); }
 }
 (function(){ const bs=document.getElementById("btnSummary"); if(bs) bs.addEventListener("click", openSummary); })();
 (function(){ const t=document.getElementById("pktRegionToggle"); if(t) t.addEventListener("click",function(e){ const r=e.target.dataset.reg; if(!r)return; pktRegion=r; pktLogPage=0; t.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.reg===r)); renderPKT(); }); })();
