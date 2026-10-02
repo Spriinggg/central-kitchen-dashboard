@@ -610,7 +610,7 @@ function openSummary(){
   "<tr><td>Waste cost</td><td style='text-align:right'>"+rm(out.cost&&out.cost.waste_cost)+"</td></tr></table>"+
   "<h2>Wastage by cause</h2><table>"+(causes||"<tr><td>No wastage records</td></tr>")+"</table>"+
   "<h2>High recipe-variance alerts</h2><table>"+(alerts||"<tr><td>None</td></tr>")+"</table>"+
-  "<p class='foot'>US Pizza Central Kitchen dashboard · figures from ERP exports. Recipe-variance figures use approximate name-matching between ERP items and recipes, so large outliers are flags to verify, not confirmed loss.</p>"+
+  "<p class='foot'>US Pizza Central Kitchen dashboard · figures from ERP exports. Recipe-variance compares actual ERP consumption against the Codemax recipe standard, matched by item code, so large outliers are flags to verify, not confirmed loss.</p>"+
   "<script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script></body></html>";
   const w=window.open("","_blank"); if(!w){ alert("Please allow pop-ups to open the summary."); return; }
   w.document.write(H); w.document.close();
