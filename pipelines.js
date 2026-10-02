@@ -99,14 +99,16 @@
 
   // ---- build agent-ready result from raw (optional date range: {from:Date,to:Date}) ----
   function build(raw, range) {
-    const agg = {}, types = {}; let dmin=null,dmax=null;
+    const agg = {}, types = {}; let dmin=null,dmax=null,consMin=null,consMax=null;
     (raw.movements||[]).forEach(v => {
       const storage=v[4], code=v[1], name=v[2];
       if (MY_STORAGES.indexOf(storage)<0 || !code) return;
       const d0=rowDate(v[0]); if(!inRange(d0,range)) return;
       const dm=/(\d{2})\/(\d{2})\/(\d{4})/.exec(v[0]||"");
-      if(dm){const d=new Date(+dm[3],+dm[2]-1,+dm[1]); if(!dmin||d<dmin)dmin=d; if(!dmax||d>dmax)dmax=d;}
+      const dcur=dm?new Date(+dm[3],+dm[2]-1,+dm[1]):null;
+      if(dcur){ if(!dmin||dcur<dmin)dmin=dcur; if(!dmax||dcur>dmax)dmax=dcur; }
       const t=classify(v[14]); types[t]=(types[t]||0)+1;
+      if(t==="production" && dcur){ if(!consMin||dcur<consMin)consMin=dcur; if(!consMax||dcur>consMax)consMax=dcur; }
       const qi=numf(v[9]), qo=numf(v[11]);
       const k=storage+"\u0001"+code;
       const a=agg[k]||(agg[k]={storage,code,name,cat:v[3],uom:v[12]||v[10]||"",received:0,production:0,dispatch:0,adj_in:0,adj_out:0,other_in:0,other_out:0});
@@ -130,8 +132,9 @@
     let matched=0,checked=0;
     items.forEach(i=>{if(i.actual_closing!=null){checked++;if(Math.abs(i.actual_closing-i.computed_closing)<=Math.max(1,Math.abs(i.actual_closing)*0.01))matched++;}});
 
-    const prod={}; let jobs=0;
-    (raw.jobRows||[]).forEach(v=>{ if(!v[0])return; if(!inRange(parseDate(v[1]),range))return; jobs++;
+    const prod={}; let jobs=0; let jobMin=null,jobMax=null;
+    (raw.jobRows||[]).forEach(v=>{ if(!v[0])return; const jd=parseDate(v[1]); if(!inRange(jd,range))return; jobs++;
+      if(jd){ if(!jobMin||jd<jobMin)jobMin=jd; if(!jobMax||jd>jobMax)jobMax=jd; }
       const name=String(v[7]||"").trim(); const exp=numParse(v[9]), act=numParse(v[10]); if(exp.n==null)return;
       const p=prod[name]||(prod[name]={product:name,jobs:0,expected:0,actual:0,uom:exp.u,defect:0});
       p.jobs++;p.expected+=exp.n;p.actual+=(act.n||0); if(String(v[4]).indexOf("Defect")>=0)p.defect++;
@@ -155,6 +158,7 @@
       top_consumed: ck.filter(i=>i.consumed_value>0).sort((a,b)=>b.consumed_value-a.consumed_value).slice(0,8).map(i=>({name:i.name,uom:i.uom,value:i.consumed_value,qty:i.production_used})) };
 
     return { cost, meta:{date_from:iso(dmin),date_to:iso(dmax),unique_rows:(raw.movements||[]).length,item_count:items.length,
+        cons_from:iso(consMin),cons_to:iso(consMax),job_from:iso(jobMin),job_to:iso(jobMax),
         movement_types:types,validation_matched:matched,validation_total:checked,
         validation_match_pct:checked?Math.round(matched/checked*1000)/10:null,opening_source:raw.openTitle,closing_source:raw.closeTitle},
       items, production:{jobs,products}, wastage:{records:waste,total_cost:wasteCost}, weekly };

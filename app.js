@@ -277,6 +277,15 @@ function tickClock() {
 tickClock();
 setInterval(tickClock, 1000);
 
+// Warning shown on the variance card when the two data sources cover different date spans.
+function varWindowNote(){
+  const w = window.__VARWIN__; if(!w) return "";
+  return `<div style="background:#fff4e5;border:1px solid #f0c48a;color:#8a5a00;border-radius:8px;padding:8px 11px;margin:6px 0 10px;font-size:12px;line-height:1.5">`
+    + `⚠️ Consumption data runs to <b>${w.cons_to}</b> but production data only to <b>${w.job_to}</b>. `
+    + `Variance below is computed on the shared window (<b>${w.from} → ${w.to}</b>) so the figures stay comparable. `
+    + `For full coverage, export both reports with the same end date.</div>`;
+}
+
 // ---- RENDER ----
 function render() {
   const d = DATA[state.snap];
@@ -349,7 +358,7 @@ function render() {
   // alerts — use LIVE data from CK GRN Agent JSON if loaded, else sample
   let alertBadge, alerts;
   if (liveAlerts) {
-    alertBadge = `<div class="src-badge live">● live from ck_grn_agent</div>`;
+    alertBadge = `<div class="src-badge live">● recipe variance · matched by item code</div>` + varWindowNote();
     // CK GRN alerts are material-level (not outlet), so filter by severity only.
     alerts = liveAlerts
       .filter(a => state.sev==="all" || a.severity===state.sev)
@@ -824,7 +833,24 @@ function applyData(out){
   const A=window.CK.CKPipeline.mapAgents(out);
   liveYield=A.liveYield; liveProd=A.liveProd; liveOrder=A.liveOrder; liveLog=null;
   try{
-    const rv=window.CK.CKPipeline.recipeVariance(out, (window.__RECIPES__&&window.__RECIPES__.recipes)||[], window.__RECMAP__||[]);
+    // Align the variance comparison to the window both data sources actually cover.
+    // (e.g. if raw consumption runs to 19 Sep but job production only to 9 Sep,
+    //  comparing all consumption vs 9 days of production makes everything look ~2x over.)
+    let rvOut = out; window.__VARWIN__ = null;
+    try{
+      const m = out.meta || {};
+      if (RAW && m.cons_from && m.cons_to && m.job_from && m.job_to) {
+        const cf=new Date(m.cons_from), ct=new Date(m.cons_to), jf=new Date(m.job_from), jt=new Date(m.job_to);
+        const from = cf>jf?cf:jf, to = ct<jt?ct:jt;
+        if (from<=to && (m.cons_to!==m.job_to || m.cons_from!==m.job_from)) {
+          rvOut = window.CK.CKPipeline.build(RAW, {from:from, to:to});
+          window.__VARWIN__ = { from: m.cons_from<m.job_from?m.job_from:m.cons_from,
+                                to: m.cons_to<m.job_to?m.cons_to:m.job_to,
+                                cons_to:m.cons_to, job_to:m.job_to };
+        }
+      }
+    }catch(we){ console.warn("variance window align failed", we); rvOut = out; }
+    const rv=window.CK.CKPipeline.recipeVariance(rvOut, (window.__RECIPES__&&window.__RECIPES__.recipes)||[], window.__RECMAP__||[]);
     window.__RVMAP__={}; rv.forEach(function(r){ window.__RVMAP__[nkeyJS(r.material)]=r.variance_pct; });
     liveAlerts = rv.map(function(r){ var av=Math.abs(r.variance_pct);
       var sev = av>=15?"high":av>=8?"medium":"low";
