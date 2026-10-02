@@ -196,13 +196,19 @@
     const recBy={}; recipeStd.forEach(r=>recBy[nkey(r.name)]=r);
     const p2r={}; (prodMap||[]).forEach(m=>{ p2r[nkey(m.product)]=m.recipe; });
     function findRecipe(pn){ const pk=nkey(pn); const rn=p2r[pk]; if(rn){ let r=recBy[nkey(rn)]; if(r) return r; const nr=nkey(rn); for(const k in recBy){ if(k.indexOf(nr)>=0||nr.indexOf(k)>=0) return recBy[k]; } } if(recBy[pk]) return recBy[pk]; return null; }
+    // expected consumption — keyed by ingredient item code when known, else by name
     const exp={};
     (out.production.products||[]).forEach(p=>{ const r=findRecipe(p.product); if(!r) return;
-      (r.ingredients||[]).forEach(i=>{ const g=toGrams(i.per_unit,i.unit); if(g==null) return; const k=nkey(i.name); (exp[k]=exp[k]||{name:i.name,g:0}).g += (p.actual||0)*g; }); });
-    const act={};
-    (out.items||[]).filter(i=>i.storage==="CK KL RAW MATERIAL").forEach(i=>{ const g=toGrams(i.production_used,i.uom); if(g==null) return; act[nkey(i.name)]={name:i.name,g:g,uom:i.uom}; });
+      (r.ingredients||[]).forEach(i=>{ const g=toGrams(i.per_unit,i.unit); if(g==null) return;
+        const key=i.code?("C:"+String(i.code).toUpperCase()):("N:"+nkey(i.name));
+        const e=exp[key]||(exp[key]={name:i.name,code:i.code||"",g:0}); e.g += (p.actual||0)*g; }); });
+    // actual ERP consumption — indexed by both item code and name for exact-code matching
+    const actByCode={}, actByName={};
+    (out.items||[]).filter(i=>i.storage==="CK KL RAW MATERIAL").forEach(i=>{ const g=toGrams(i.production_used,i.uom); if(g==null) return;
+      const rec={name:i.name,g:g,uom:i.uom}; if(i.code) actByCode[String(i.code).toUpperCase()]=rec; actByName[nkey(i.name)]=rec; });
     const rows=[];
-    Object.keys(exp).forEach(k=>{ const e=exp[k], a=act[k]; if(!a||e.g<=0) return;
+    Object.keys(exp).forEach(k=>{ const e=exp[k]; if(e.g<=0) return;
+      let a=e.code?actByCode[String(e.code).toUpperCase()]:null; if(!a) a=actByName[nkey(e.name)]; if(!a) return;
       const v=Math.round((a.g-e.g)/e.g*1000)/10;
       rows.push({ material:e.name, expected_kg:Math.round(e.g/100)/10, actual_kg:Math.round(a.g/100)/10, variance_pct:v }); });
     rows.sort((a,b)=>Math.abs(b.variance_pct)-Math.abs(a.variance_pct));

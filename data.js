@@ -1,8 +1,10 @@
 // ===== Central Kitchen Dashboard — reference data =====
 // Standard recipes + product-to-recipe map. Edit here to update recipe standards.
+// Recipes sourced from the Codemax "Recipes Listing" report (full formula, incl. ingredient item codes),
+// so usage variance can match actual ERP consumption by item code rather than by name.
 
 window.__RECIPES__ = {
-  "source": "US Pizza Center Kitchen - Knowledge / Recipe Cards",
+  "source": "US Pizza Center Kitchen - Codemax Recipes Listing (full formula, item-coded)",
   "recipe_count": 35,
   "categories": [
     "DOUGH",
@@ -13,2146 +15,2712 @@ window.__RECIPES__ = {
   ],
   "recipes": [
     {
-      "name": "BURGER BUN",
-      "yield_qty": 120.0,
-      "yield_unit": "PCS",
-      "dimension": "12 PIECES X 1 PACKET",
-      "ingredients": [
-        {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 1.28,
-          "unit": "KG",
-          "grams": 1280.0,
-          "per_unit": 0.011,
-          "grams_per_unit": 10.67
-        },
-        {
-          "name": "Ice",
-          "group": "BEVERAGE",
-          "qty": 800.0,
-          "unit": "GM",
-          "grams": 800.0,
-          "per_unit": 6.667,
-          "grams_per_unit": 6.67
-        },
-        {
-          "name": "40Kg Australian Fine Salt",
-          "group": "FOOD",
-          "qty": 0.084,
-          "unit": "KG",
-          "grams": 84.0,
-          "per_unit": 0.001,
-          "grams_per_unit": 0.7
-        },
-        {
-          "name": "Anchor Salted Butter 25Kg",
-          "group": "FOOD",
-          "qty": 0.36,
-          "unit": "KG",
-          "grams": 360.0,
-          "per_unit": 0.003,
-          "grams_per_unit": 3.0
-        },
-        {
-          "name": "Flour Gunung Mas 25Kg",
-          "group": "FOOD",
-          "qty": 5.0,
-          "unit": "KG",
-          "grams": 5000.0,
-          "per_unit": 0.042,
-          "grams_per_unit": 41.67
-        },
-        {
-          "name": "Instant Yeast (500Gm X 20Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 76.0,
-          "unit": "GM",
-          "grams": 76.0,
-          "per_unit": 0.633,
-          "grams_per_unit": 0.63
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 0.6,
-          "unit": "KG",
-          "grams": 600.0,
-          "per_unit": 0.005,
-          "grams_per_unit": 5.0
-        },
-        {
-          "name": "Egg Grade A (1 Tray)",
-          "group": "FOOD",
-          "qty": 15.0,
-          "unit": "PCS",
-          "grams": null,
-          "per_unit": 0.125,
-          "grams_per_unit": null
-        }
-      ],
-      "category": "DOUGH"
-    },
-    {
-      "name": "FROZEN DOUGH LARGE 380G",
-      "yield_qty": 105.0,
+      "code": "RCP-00001",
+      "name": "Frozen Dough Large 380g",
+      "category": "DOUGH",
+      "yield_qty": 105,
       "yield_unit": "PCS",
       "dimension": "380G X 15 PIECES X 1 PACKET",
       "ingredients": [
         {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 7.125,
-          "unit": "KG",
-          "grams": 7125.0,
-          "per_unit": 0.068,
-          "grams_per_unit": 67.86
+          "name": "NYLON PE 14X20 (2KG) (60PCS X 15PKT X 1CTN)",
+          "code": "CKRM00067",
+          "group": "PACKAGING",
+          "qty": 7,
+          "unit": "PCS",
+          "per_unit": 0.0667,
+          "grams_per_unit": null
         },
         {
-          "name": "Ice",
-          "group": "BEVERAGE",
-          "qty": 7125.0,
+          "name": "PIZZA MIX 15KG",
+          "code": "USRW00347",
+          "group": "FOOD",
+          "qty": 850,
           "unit": "GM",
-          "grams": 7125.0,
-          "per_unit": 67.857,
-          "grams_per_unit": 67.86
+          "per_unit": 8.0952,
+          "grams_per_unit": 8.095
         },
         {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
+          "name": "INSTANT YEAST (500GM X 20PKT X 1CTN)",
+          "code": "CKRM00035",
           "group": "FOOD",
-          "qty": 0.75,
-          "unit": "KG",
-          "grams": 750.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 7.14
-        },
-        {
-          "name": "Flour Gunung Mas 25Kg",
-          "group": "FOOD",
-          "qty": 25.0,
-          "unit": "KG",
-          "grams": 25000.0,
-          "per_unit": 0.238,
-          "grams_per_unit": 238.1
-        },
-        {
-          "name": "Instant Yeast (500Gm X 20Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 250.0,
+          "qty": 250,
           "unit": "GM",
-          "grams": 250.0,
           "per_unit": 2.381,
-          "grams_per_unit": 2.38
+          "grams_per_unit": 2.381
         },
         {
-          "name": "Pinnacle Bread Improver - Voltex",
-          "group": "FOOD",
-          "qty": 125.0,
+          "name": "ICE",
+          "code": "USRW00072",
+          "group": "BEVERAGE",
+          "qty": 7125,
           "unit": "GM",
-          "grams": 125.0,
-          "per_unit": 1.19,
+          "per_unit": 67.8571,
+          "grams_per_unit": 67.857
+        },
+        {
+          "name": "PINNACLE  BREAD IMPROVER - VOLTEX",
+          "code": "CKRM00069",
+          "group": "FOOD",
+          "qty": 125,
+          "unit": "GM",
+          "per_unit": 1.1905,
           "grams_per_unit": 1.19
         },
         {
-          "name": "Pizza Mix 15Kg",
-          "group": "FOOD",
-          "qty": 850.0,
-          "unit": "GM",
-          "grams": 850.0,
-          "per_unit": 8.095,
-          "grams_per_unit": 8.1
-        }
-      ],
-      "category": "DOUGH"
-    },
-    {
-      "name": "FROZEN DOUGH PERSONAL 100G",
-      "yield_qty": 400.0,
-      "yield_unit": "PCS",
-      "dimension": "100G X 50 PIECES X 1 PACKET",
-      "ingredients": [
-        {
-          "name": "Water",
-          "group": "WATER",
+          "name": "water",
+          "code": "",
+          "group": "",
           "qty": 7.125,
           "unit": "KG",
-          "grams": 7125.0,
-          "per_unit": 0.018,
-          "grams_per_unit": 17.81
+          "per_unit": 0.0679,
+          "grams_per_unit": 67.857
         },
         {
-          "name": "Ice",
-          "group": "BEVERAGE",
-          "qty": 7125.0,
-          "unit": "GM",
-          "grams": 7125.0,
-          "per_unit": 17.812,
-          "grams_per_unit": 17.81
+          "name": "FLOUR GUNUNG MAS 25KG",
+          "code": "CKRM00032",
+          "group": "FOOD",
+          "qty": 25,
+          "unit": "KG",
+          "per_unit": 0.2381,
+          "grams_per_unit": 238.095
         },
         {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
           "group": "FOOD",
           "qty": 0.75,
           "unit": "KG",
-          "grams": 750.0,
-          "per_unit": 0.002,
-          "grams_per_unit": 1.88
+          "per_unit": 0.0071,
+          "grams_per_unit": 7.143
         },
         {
-          "name": "Flour Gunung Mas 25Kg",
-          "group": "FOOD",
-          "qty": 25.0,
-          "unit": "KG",
-          "grams": 25000.0,
-          "per_unit": 0.062,
-          "grams_per_unit": 62.5
-        },
-        {
-          "name": "Instant Yeast (500Gm X 20Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 250.0,
-          "unit": "GM",
-          "grams": 250.0,
-          "per_unit": 0.625,
-          "grams_per_unit": 0.62
-        },
-        {
-          "name": "Pinnacle Bread Improver - Voltex",
-          "group": "FOOD",
-          "qty": 125.0,
-          "unit": "GM",
-          "grams": 125.0,
-          "per_unit": 0.312,
-          "grams_per_unit": 0.31
-        },
-        {
-          "name": "Pizza Mix 15Kg",
-          "group": "FOOD",
-          "qty": 850.0,
-          "unit": "GM",
-          "grams": 850.0,
-          "per_unit": 2.125,
-          "grams_per_unit": 2.12
+          "name": "CARTON BOX LARGE - US PIZZA 510MM X 310MM X 268MM TL150/M150/M150/TL150 ",
+          "code": "CKRM00079",
+          "group": "PACKAGING",
+          "qty": 2,
+          "unit": "PCS",
+          "per_unit": 0.019,
+          "grams_per_unit": null
         }
-      ],
-      "category": "DOUGH"
+      ]
     },
     {
-      "name": "FROZEN DOUGH REGULAR 210G",
-      "yield_qty": 190.0,
+      "code": "RCP-00002",
+      "name": "Frozen Dough Regular 210g",
+      "category": "DOUGH",
+      "yield_qty": 190,
       "yield_unit": "PCS",
       "dimension": "210G X 25 PIECES X 1 PACKET",
       "ingredients": [
         {
-          "name": "Water",
-          "group": "WATER",
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
+          "group": "FOOD",
+          "qty": 0.75,
+          "unit": "KG",
+          "per_unit": 0.0039,
+          "grams_per_unit": 3.947
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
           "qty": 7.125,
           "unit": "KG",
-          "grams": 7125.0,
-          "per_unit": 0.037,
+          "per_unit": 0.0375,
           "grams_per_unit": 37.5
         },
         {
-          "name": "Ice",
-          "group": "BEVERAGE",
-          "qty": 7125.0,
+          "name": "FLOUR GUNUNG MAS 25KG",
+          "code": "CKRM00032",
+          "group": "FOOD",
+          "qty": 25,
+          "unit": "KG",
+          "per_unit": 0.1316,
+          "grams_per_unit": 131.579
+        },
+        {
+          "name": "INSTANT YEAST (500GM X 20PKT X 1CTN)",
+          "code": "CKRM00035",
+          "group": "FOOD",
+          "qty": 250,
           "unit": "GM",
-          "grams": 7125.0,
+          "per_unit": 1.3158,
+          "grams_per_unit": 1.316
+        },
+        {
+          "name": "PINNACLE  BREAD IMPROVER - VOLTEX",
+          "code": "CKRM00069",
+          "group": "FOOD",
+          "qty": 125,
+          "unit": "GM",
+          "per_unit": 0.6579,
+          "grams_per_unit": 0.658
+        },
+        {
+          "name": "PIZZA MIX 15KG",
+          "code": "USRW00347",
+          "group": "FOOD",
+          "qty": 850,
+          "unit": "GM",
+          "per_unit": 4.4737,
+          "grams_per_unit": 4.474
+        },
+        {
+          "name": "ICE",
+          "code": "USRW00072",
+          "group": "BEVERAGE",
+          "qty": 7125,
+          "unit": "GM",
           "per_unit": 37.5,
           "grams_per_unit": 37.5
         },
         {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
-          "group": "FOOD",
-          "qty": 0.75,
-          "unit": "KG",
-          "grams": 750.0,
-          "per_unit": 0.004,
-          "grams_per_unit": 3.95
-        },
-        {
-          "name": "Flour Gunung Mas 25Kg",
-          "group": "FOOD",
-          "qty": 25.0,
-          "unit": "KG",
-          "grams": 25000.0,
-          "per_unit": 0.132,
-          "grams_per_unit": 131.58
-        },
-        {
-          "name": "Instant Yeast (500Gm X 20Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 250.0,
-          "unit": "GM",
-          "grams": 250.0,
-          "per_unit": 1.316,
-          "grams_per_unit": 1.32
-        },
-        {
-          "name": "Pinnacle Bread Improver - Voltex",
-          "group": "FOOD",
-          "qty": 125.0,
-          "unit": "GM",
-          "grams": 125.0,
-          "per_unit": 0.658,
-          "grams_per_unit": 0.66
-        },
-        {
-          "name": "Pizza Mix 15Kg",
-          "group": "FOOD",
-          "qty": 850.0,
-          "unit": "GM",
-          "grams": 850.0,
-          "per_unit": 4.474,
-          "grams_per_unit": 4.47
-        }
-      ],
-      "category": "DOUGH"
-    },
-    {
-      "name": "BEEF PATTY",
-      "yield_qty": 64.0,
-      "yield_unit": "PKT",
-      "dimension": "4 PCS X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Aust Beef Chuck Roll (Per Kg)",
-          "group": "FOOD",
-          "qty": 8.0,
-          "unit": "KG",
-          "grams": 8000.0,
-          "per_unit": 0.125,
-          "grams_per_unit": 125.0
-        },
-        {
-          "name": "Aust Brisket (Per Kg)",
-          "group": "FOOD",
-          "qty": 25.0,
-          "unit": "KG",
-          "grams": 25000.0,
-          "per_unit": 0.391,
-          "grams_per_unit": 390.62
-        }
-      ],
-      "category": "MEAT"
-    },
-    {
-      "name": "CHICKEN PATTY",
-      "yield_qty": 44.0,
-      "yield_unit": "PKT",
-      "dimension": "4 PCS X 1 PKT",
-      "ingredients": [
-        {
-          "name": "40Kg Australian Fine Salt",
-          "group": "FOOD",
-          "qty": 0.24,
-          "unit": "KG",
-          "grams": 240.0,
-          "per_unit": 0.005,
-          "grams_per_unit": 5.45
-        },
-        {
-          "name": "Anchor Salted Butter 25Kg",
-          "group": "FOOD",
-          "qty": 0.6,
-          "unit": "KG",
-          "grams": 600.0,
-          "per_unit": 0.014,
-          "grams_per_unit": 13.64
-        },
-        {
-          "name": "Boneless Breast Skin On ( Per Kg )",
-          "group": "FOOD",
-          "qty": 24.0,
-          "unit": "KG",
-          "grams": 24000.0,
-          "per_unit": 0.545,
-          "grams_per_unit": 545.45
-        },
-        {
-          "name": "White Pepper (500Gm X Pkt)",
-          "group": "FOOD",
-          "qty": 0.24,
-          "unit": "KG",
-          "grams": 240.0,
-          "per_unit": 0.005,
-          "grams_per_unit": 5.45
-        }
-      ],
-      "category": "MEAT"
-    },
-    {
-      "name": "CHICKEN WING",
-      "yield_qty": 36.0,
-      "yield_unit": "PKT",
-      "dimension": "30 PAIRS X 1 PKT",
-      "ingredients": [
-        {
-          "name": "40Kg Australian Fine Salt",
-          "group": "FOOD",
-          "qty": 0.9,
-          "unit": "KG",
-          "grams": 900.0,
-          "per_unit": 0.025,
-          "grams_per_unit": 25.0
-        },
-        {
-          "name": "Babas Meat Curry Powder (1Kg X 10Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.9,
-          "unit": "KG",
-          "grams": 900.0,
-          "per_unit": 0.025,
-          "grams_per_unit": 25.0
-        },
-        {
-          "name": "Drummet (Wing) (Per Kg)",
-          "group": "FOOD",
-          "qty": 60.0,
-          "unit": "KG",
-          "grams": 60000.0,
-          "per_unit": 1.667,
-          "grams_per_unit": 1666.67
-        },
-        {
-          "name": "Mid Joint Wing (Per Kg)",
-          "group": "FOOD",
-          "qty": 40.0,
-          "unit": "KG",
-          "grams": 40000.0,
-          "per_unit": 1.111,
-          "grams_per_unit": 1111.11
-        },
-        {
-          "name": "Babas Chili Powder (1Kg X 10Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.9,
-          "unit": "KG",
-          "grams": 900.0,
-          "per_unit": 0.025,
-          "grams_per_unit": 25.0
-        }
-      ],
-      "category": "MEAT"
-    },
-    {
-      "name": "GROUND BEEF",
-      "yield_qty": 62.0,
-      "yield_unit": "PKT",
-      "dimension": "200 G X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Minced Beef (2.5Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 25.0,
-          "unit": "KG",
-          "grams": 25000.0,
-          "per_unit": 0.403,
-          "grams_per_unit": 403.23
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 1.2,
-          "unit": "KG",
-          "grams": 1200.0,
-          "per_unit": 0.019,
-          "grams_per_unit": 19.35
-        },
-        {
-          "name": "Mixed Herbs Whole (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.15,
-          "unit": "KG",
-          "grams": 150.0,
-          "per_unit": 0.002,
-          "grams_per_unit": 2.42
-        }
-      ],
-      "category": "MEAT"
-    },
-    {
-      "name": "ITALIANO CHICKEN",
-      "yield_qty": 62.0,
-      "yield_unit": "PKT",
-      "dimension": "1 KG X 1 PKT",
-      "ingredients": [
-        {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
-          "group": "FOOD",
-          "qty": 1.5,
-          "unit": "KG",
-          "grams": 1500.0,
-          "per_unit": 0.024,
-          "grams_per_unit": 24.19
-        },
-        {
-          "name": "Knorr Italian Herb Paste (1.5Kg X 6Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 4.5,
-          "unit": "KG",
-          "grams": 4500.0,
-          "per_unit": 0.073,
-          "grams_per_unit": 72.58
-        },
-        {
-          "name": "Sbl Free Size (Frozen) (Per Kg)",
-          "group": "FOOD",
-          "qty": 100.0,
-          "unit": "KG",
-          "grams": 100000.0,
-          "per_unit": 1.613,
-          "grams_per_unit": 1612.9
-        },
-        {
-          "name": "Hosen Pure Honey (1Kg X 12Tub X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.75,
-          "unit": "KG",
-          "grams": 750.0,
-          "per_unit": 0.012,
-          "grams_per_unit": 12.1
-        },
-        {
-          "name": "Mixed Herbs Whole (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.07,
-          "unit": "KG",
-          "grams": 70.0,
-          "per_unit": 0.001,
-          "grams_per_unit": 1.13
-        }
-      ],
-      "category": "MEAT"
-    },
-    {
-      "name": "SPICY CHICKEN",
-      "yield_qty": 110.0,
-      "yield_unit": "PKT",
-      "dimension": "500 GM X 1 PKT",
-      "ingredients": [
-        {
-          "name": "40Kg Australian Fine Salt",
-          "group": "FOOD",
-          "qty": 0.8,
-          "unit": "KG",
-          "grams": 800.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 7.27
-        },
-        {
-          "name": "Babas Meat Curry Powder (1Kg X 10Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.9,
-          "unit": "KG",
-          "grams": 900.0,
-          "per_unit": 0.008,
-          "grams_per_unit": 8.18
-        },
-        {
-          "name": "Sbl Free Size (Frozen) (Per Kg)",
-          "group": "FOOD",
-          "qty": 100.0,
-          "unit": "KG",
-          "grams": 100000.0,
-          "per_unit": 0.909,
-          "grams_per_unit": 909.09
-        },
-        {
-          "name": "Babas Chili Powder (1Kg X 10Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 1.0,
-          "unit": "KG",
-          "grams": 1000.0,
-          "per_unit": 0.009,
-          "grams_per_unit": 9.09
-        }
-      ],
-      "category": "MEAT"
-    },
-    {
-      "name": "UMAMI BEEF SAUCE",
-      "yield_qty": 3.0,
-      "yield_unit": "PKT",
-      "dimension": "500 G X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Anchor Salted Butter 25Kg",
-          "group": "FOOD",
-          "qty": 30.0,
-          "unit": "GM",
-          "grams": 30.0,
-          "per_unit": 10.0,
-          "grams_per_unit": 10.0
-        },
-        {
-          "name": "Brown Sugar",
-          "group": "FOOD",
-          "qty": 130.0,
-          "unit": "GM",
-          "grams": 130.0,
-          "per_unit": 43.333,
-          "grams_per_unit": 43.33
-        },
-        {
-          "name": "Lea Perrin Sauce (290Ml X 12Btl X 1Ctn)",
-          "group": "FOOD",
-          "qty": 10.0,
-          "unit": "GM",
-          "grams": 10.0,
-          "per_unit": 3.333,
-          "grams_per_unit": 3.33
-        },
-        {
-          "name": "Life Tomato Ketchup (1Kg X 12Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.38,
-          "unit": "KG",
-          "grams": 380.0,
-          "per_unit": 0.127,
-          "grams_per_unit": 126.67
-        },
-        {
-          "name": "Minced Beef (2.5Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.9,
-          "unit": "KG",
-          "grams": 900.0,
-          "per_unit": 0.3,
-          "grams_per_unit": 300.0
-        },
-        {
-          "name": "Morehouse Pure Mustard 1 Gal",
-          "group": "FOOD",
-          "qty": 130.0,
-          "unit": "GM",
-          "grams": 130.0,
-          "per_unit": 43.333,
-          "grams_per_unit": 43.33
-        },
-        {
-          "name": "Black Pepper Coarse (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 25.0,
-          "unit": "GM",
-          "grams": 25.0,
-          "per_unit": 8.333,
-          "grams_per_unit": 8.33
-        },
-        {
-          "name": "Heinz Original Bbq Sauce (2.2Kg X 6Btl X 1Ctn)",
-          "group": "FOOD",
-          "qty": 350.0,
-          "unit": "GM",
-          "grams": 350.0,
-          "per_unit": 116.667,
-          "grams_per_unit": 116.67
-        }
-      ],
-      "category": "MEAT"
-    },
-    {
-      "name": "CINNAMON SUGAR PREMIX",
-      "yield_qty": 11.0,
-      "yield_unit": "PKT",
-      "dimension": "1 KG X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Cinnamon Powder (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 1.0,
-          "unit": "KG",
-          "grams": 1000.0,
-          "per_unit": 0.091,
-          "grams_per_unit": 90.91
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 10.0,
-          "unit": "KG",
-          "grams": 10000.0,
-          "per_unit": 0.909,
-          "grams_per_unit": 909.09
-        }
-      ],
-      "category": "PREMIX"
-    },
-    {
-      "name": "DOUGH PREMIX",
-      "yield_qty": 1.0,
-      "yield_unit": "PKT",
-      "dimension": "1 PKT",
-      "ingredients": [
-        {
-          "name": "Instant Yeast (500Gm X 20Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 100.0,
-          "unit": "GM",
-          "grams": 100.0,
-          "per_unit": 100.0,
-          "grams_per_unit": 100.0
-        },
-        {
-          "name": "Pinnacle Bread Improver - Voltex",
-          "group": "FOOD",
-          "qty": 50.0,
-          "unit": "GM",
-          "grams": 50.0,
-          "per_unit": 50.0,
-          "grams_per_unit": 50.0
-        },
-        {
-          "name": "Pizza Mix 15Kg",
-          "group": "FOOD",
-          "qty": 340.0,
-          "unit": "GM",
-          "grams": 340.0,
-          "per_unit": 340.0,
-          "grams_per_unit": 340.0
-        }
-      ],
-      "category": "PREMIX"
-    },
-    {
-      "name": "ICE TEA PREMIX",
-      "yield_qty": 1.0,
-      "yield_unit": "PKT",
-      "dimension": "1 KG X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Lipton Extra Kaw Catering Potbag (12Gm X 10Pcs X 36Pkt X 1Ctn)",
-          "group": "BEVERAGE",
-          "qty": 3.0,
+          "name": "NYLON PE 14X20 (2KG) (60PCS X 15PKT X 1CTN)",
+          "code": "CKRM00067",
+          "group": "PACKAGING",
+          "qty": 7,
           "unit": "PCS",
-          "grams": null,
-          "per_unit": 3.0,
+          "per_unit": 0.0368,
           "grams_per_unit": null
         },
         {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 1.0,
-          "unit": "KG",
-          "grams": 1000.0,
-          "per_unit": 1.0,
-          "grams_per_unit": 1000.0
+          "name": "CARTON BOX LARGE - US PIZZA 510MM X 310MM X 268MM TL150/M150/M150/TL150 ",
+          "code": "CKRM00079",
+          "group": "PACKAGING",
+          "qty": 2,
+          "unit": "PCS",
+          "per_unit": 0.0105,
+          "grams_per_unit": null
         }
-      ],
-      "category": "PREMIX"
+      ]
     },
     {
-      "name": "MUSHROOM SOUP PREMIX",
-      "yield_qty": 1.0,
-      "yield_unit": "PKT",
-      "dimension": "1 PKT",
+      "code": "RCP-00003",
+      "name": "Frozen Dough Personal 100g",
+      "category": "DOUGH",
+      "yield_qty": 400,
+      "yield_unit": "PCS",
+      "dimension": "100G X 50 PIECES X 1 PACKET",
       "ingredients": [
         {
-          "name": "Knorr Cream Of Mushroom Soup (1Kg X 6Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.25,
-          "unit": "KG",
-          "grams": 250.0,
-          "per_unit": 0.25,
-          "grams_per_unit": 250.0
-        },
-        {
-          "name": "Tepung Ubi Kayu 3A (20Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.04,
-          "unit": "KG",
-          "grams": 40.0,
-          "per_unit": 0.04,
-          "grams_per_unit": 40.0
-        },
-        {
-          "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.025,
-          "unit": "KG",
-          "grams": 25.0,
-          "per_unit": 0.025,
-          "grams_per_unit": 25.0
-        }
-      ],
-      "category": "PREMIX"
-    },
-    {
-      "name": "MARSHAL'S NACHO CHEESE SAUCE (500G)",
-      "yield_qty": 20.0,
-      "yield_unit": "PKT",
-      "dimension": "500 G X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 2.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.1,
+          "name": "CARTON BOX LARGE - US PIZZA 510MM X 310MM X 268MM TL150/M150/M150/TL150 ",
+          "code": "CKRM00079",
+          "group": "PACKAGING",
+          "qty": 2,
+          "unit": "PCS",
+          "per_unit": 0.005,
           "grams_per_unit": null
         },
         {
-          "name": "Swiss Bear Nacho Cheese Sauce 1Kg/12Pkt/Ctn",
-          "group": "FOOD",
-          "qty": 10000.0,
-          "unit": "GM",
-          "grams": 10000.0,
-          "per_unit": 500.0,
-          "grams_per_unit": 500.0
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MARSHALL'S SAUCE (500G)",
-      "yield_qty": 8.0,
-      "yield_unit": "PKT",
-      "dimension": "500G X 1 PKT",
-      "ingredients": [
-        {
-          "name": "40Kg Australian Fine Salt",
-          "group": "FOOD",
-          "qty": 60.0,
-          "unit": "GM",
-          "grams": 60.0,
-          "per_unit": 7.5,
-          "grams_per_unit": 7.5
-        },
-        {
-          "name": "Brown Sugar",
-          "group": "FOOD",
-          "qty": 20.0,
-          "unit": "GM",
-          "grams": 20.0,
-          "per_unit": 2.5,
-          "grams_per_unit": 2.5
-        },
-        {
-          "name": "Cayenne Powder (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 20.0,
-          "unit": "GM",
-          "grams": 20.0,
-          "per_unit": 2.5,
-          "grams_per_unit": 2.5
-        },
-        {
-          "name": "Lady'S Choice Mayo Magic (3L X 4Tub X 1Ctn)",
-          "group": "FOOD",
-          "qty": 2500.0,
-          "unit": "GM",
-          "grams": 2500.0,
-          "per_unit": 312.5,
-          "grams_per_unit": 312.5
-        },
-        {
-          "name": "Lea Perrin Sauce (290Ml X 12Btl X 1Ctn)",
-          "group": "FOOD",
-          "qty": 75.0,
-          "unit": "GM",
-          "grams": 75.0,
-          "per_unit": 9.375,
-          "grams_per_unit": 9.38
-        },
-        {
-          "name": "Life Chili Sauce (1Kg X 12Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 600.0,
-          "unit": "GM",
-          "grams": 600.0,
-          "per_unit": 75.0,
-          "grams_per_unit": 75.0
-        },
-        {
-          "name": "Life Tomato Ketchup (1Kg X 12Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 600.0,
-          "unit": "GM",
-          "grams": 600.0,
-          "per_unit": 75.0,
-          "grams_per_unit": 75.0
-        },
-        {
-          "name": "Morehouse Pure Mustard 1 Gal",
-          "group": "FOOD",
-          "qty": 280.0,
-          "unit": "GM",
-          "grams": 280.0,
-          "per_unit": 35.0,
-          "grams_per_unit": 35.0
-        },
-        {
-          "name": "Tabasco Sauce (60Ml X 12Pcs X 1Ctn)",
-          "group": "FOOD",
-          "qty": 45.0,
-          "unit": "ML",
-          "grams": null,
-          "per_unit": 5.625,
-          "grams_per_unit": null
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MARSHALL'S SPICY SAUCE (500G)",
-      "yield_qty": 6.0,
-      "yield_unit": "PKT",
-      "dimension": "500G X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Brown Sugar",
-          "group": "FOOD",
-          "qty": 0.04,
-          "unit": "KG",
-          "grams": 40.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 6.67
-        },
-        {
-          "name": "Lea Perrin Sauce (290Ml X 12Btl X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.1,
-          "unit": "KG",
-          "grams": 100.0,
-          "per_unit": 0.017,
-          "grams_per_unit": 16.67
-        },
-        {
-          "name": "Life Chili Sauce (1Kg X 12Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.333,
-          "grams_per_unit": 333.33
-        },
-        {
-          "name": "Life Tomato Ketchup (1Kg X 12Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 1.0,
-          "unit": "KG",
-          "grams": 1000.0,
-          "per_unit": 0.167,
-          "grams_per_unit": 166.67
-        },
-        {
-          "name": "Morehouse Pure Mustard 1 Gal",
-          "group": "FOOD",
-          "qty": 170.0,
-          "unit": "GM",
-          "grams": 170.0,
-          "per_unit": 28.333,
-          "grams_per_unit": 28.33
-        },
-        {
-          "name": "Black Pepper Coarse (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.02,
-          "unit": "KG",
-          "grams": 20.0,
-          "per_unit": 0.003,
-          "grams_per_unit": 3.33
-        },
-        {
-          "name": "Heinz Original Bbq Sauce (2.2Kg X 6Btl X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.2,
-          "unit": "KG",
-          "grams": 200.0,
-          "per_unit": 0.033,
-          "grams_per_unit": 33.33
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MY US BOLOGNESE SAUCE (500GM)",
-      "yield_qty": 100.0,
-      "yield_unit": "PKT",
-      "dimension": "500G X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 10.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.1,
-          "grams_per_unit": null
-        },
-        {
-          "name": "Anchor Salted Butter 25Kg",
-          "group": "FOOD",
-          "qty": 2.5,
-          "unit": "KG",
-          "grams": 2500.0,
-          "per_unit": 0.025,
-          "grams_per_unit": 25.0
-        },
-        {
-          "name": "Bay Leave Whole (500Gm X Pkt)",
-          "group": "FOOD",
-          "qty": 0.02,
-          "unit": "KG",
-          "grams": 20.0,
-          "per_unit": 0.0,
-          "grams_per_unit": 0.2
-        },
-        {
-          "name": "Carrot (Per Kg)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
+          "name": "NYLON PE 14X20 (2KG) (60PCS X 15PKT X 1CTN)",
+          "code": "CKRM00067",
+          "group": "PACKAGING",
+          "qty": 8,
+          "unit": "PCS",
           "per_unit": 0.02,
-          "grams_per_unit": 20.0
+          "grams_per_unit": null
         },
         {
-          "name": "Celery (Per Kg)",
+          "name": "PIZZA MIX 15KG",
+          "code": "USRW00347",
           "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.02,
-          "grams_per_unit": 20.0
+          "qty": 850,
+          "unit": "GM",
+          "per_unit": 2.125,
+          "grams_per_unit": 2.125
         },
         {
-          "name": "Garlic Peeled (Per Kg)",
+          "name": "ICE",
+          "code": "USRW00072",
+          "group": "BEVERAGE",
+          "qty": 7125,
+          "unit": "GM",
+          "per_unit": 17.8125,
+          "grams_per_unit": 17.812
+        },
+        {
+          "name": "INSTANT YEAST (500GM X 20PKT X 1CTN)",
+          "code": "CKRM00035",
+          "group": "FOOD",
+          "qty": 250,
+          "unit": "GM",
+          "per_unit": 0.625,
+          "grams_per_unit": 0.625
+        },
+        {
+          "name": "PINNACLE  BREAD IMPROVER - VOLTEX",
+          "code": "CKRM00069",
+          "group": "FOOD",
+          "qty": 125,
+          "unit": "GM",
+          "per_unit": 0.3125,
+          "grams_per_unit": 0.312
+        },
+        {
+          "name": "FLOUR GUNUNG MAS 25KG",
+          "code": "CKRM00032",
+          "group": "FOOD",
+          "qty": 25,
+          "unit": "KG",
+          "per_unit": 0.0625,
+          "grams_per_unit": 62.5
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 7.125,
+          "unit": "KG",
+          "per_unit": 0.0178,
+          "grams_per_unit": 17.812
+        },
+        {
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
+          "group": "FOOD",
+          "qty": 0.75,
+          "unit": "KG",
+          "per_unit": 0.0019,
+          "grams_per_unit": 1.875
+        }
+      ]
+    },
+    {
+      "code": "RCP-00004",
+      "name": "Burger Bun",
+      "category": "DOUGH",
+      "yield_qty": 120,
+      "yield_unit": "PCS",
+      "dimension": "12 PIECES X 1 PACKET",
+      "ingredients": [
+        {
+          "name": "EGG GRADE A (1 TRAY)",
+          "code": "USRW00046",
+          "group": "FOOD",
+          "qty": 15,
+          "unit": "PCS",
+          "per_unit": 0.125,
+          "grams_per_unit": null
+        },
+        {
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
+          "group": "FOOD",
+          "qty": 0.084,
+          "unit": "KG",
+          "per_unit": 0.0007,
+          "grams_per_unit": 0.7
+        },
+        {
+          "name": "FLOUR GUNUNG MAS 25KG",
+          "code": "CKRM00032",
+          "group": "FOOD",
+          "qty": 5,
+          "unit": "KG",
+          "per_unit": 0.0417,
+          "grams_per_unit": 41.667
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 1.28,
+          "unit": "KG",
+          "per_unit": 0.0107,
+          "grams_per_unit": 10.667
+        },
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
           "group": "FOOD",
           "qty": 0.6,
           "unit": "KG",
-          "grams": 600.0,
-          "per_unit": 0.006,
-          "grams_per_unit": 6.0
-        },
-        {
-          "name": "Minced Chicken (Per Kg)",
-          "group": "FOOD",
-          "qty": 24.0,
-          "unit": "KG",
-          "grams": 24000.0,
-          "per_unit": 0.24,
-          "grams_per_unit": 240.0
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 0.5,
-          "unit": "KG",
-          "grams": 500.0,
           "per_unit": 0.005,
           "grams_per_unit": 5.0
         },
         {
-          "name": "Palmdale Tomato Puree (3Kg X 6Tin X 1Ctn)",
+          "name": "ANCHOR SALTED BUTTER 25KG",
+          "code": "CKRM00005",
           "group": "FOOD",
-          "qty": 18.0,
+          "qty": 0.36,
           "unit": "KG",
-          "grams": 18000.0,
-          "per_unit": 0.18,
-          "grams_per_unit": 180.0
+          "per_unit": 0.003,
+          "grams_per_unit": 3.0
         },
         {
-          "name": "Black Pepper Coarse (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.12,
-          "unit": "KG",
-          "grams": 120.0,
-          "per_unit": 0.001,
-          "grams_per_unit": 1.2
-        },
-        {
-          "name": "Hosen Mushroom Sliced (2.84Kg X 6Tin X 1Ctn)",
-          "group": "FOOD",
-          "qty": 2.84,
-          "unit": "KG",
-          "grams": 2840.0,
-          "per_unit": 0.028,
-          "grams_per_unit": 28.4
-        },
-        {
-          "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 1.7,
-          "unit": "KG",
-          "grams": 1700.0,
-          "per_unit": 0.017,
-          "grams_per_unit": 17.0
-        },
-        {
-          "name": "Mixed Herbs Whole (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.12,
-          "unit": "KG",
-          "grams": 120.0,
-          "per_unit": 0.001,
-          "grams_per_unit": 1.2
-        },
-        {
-          "name": "Yellow Onion",
-          "group": "FOOD",
-          "qty": 5.0,
-          "unit": "KG",
-          "grams": 5000.0,
-          "per_unit": 0.05,
-          "grams_per_unit": 50.0
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MY US BOLOGNESE SAUCE 3KG",
-      "yield_qty": 16.5,
-      "yield_unit": "PKT",
-      "dimension": "3 KG X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 10.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.606,
+          "name": "CARTON BOX LARGE - US PIZZA 510MM X 310MM X 268MM TL150/M150/M150/TL150 ",
+          "code": "CKRM00079",
+          "group": "PACKAGING",
+          "qty": 3,
+          "unit": "PCS",
+          "per_unit": 0.025,
           "grams_per_unit": null
         },
         {
-          "name": "Anchor Salted Butter 25Kg",
-          "group": "FOOD",
-          "qty": 2.5,
-          "unit": "KG",
-          "grams": 2500.0,
-          "per_unit": 0.152,
-          "grams_per_unit": 151.52
-        },
-        {
-          "name": "Bay Leave Whole (500Gm X Pkt)",
-          "group": "FOOD",
-          "qty": 0.02,
-          "unit": "KG",
-          "grams": 20.0,
-          "per_unit": 0.001,
-          "grams_per_unit": 1.21
-        },
-        {
-          "name": "Carrot (Per Kg)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.121,
-          "grams_per_unit": 121.21
-        },
-        {
-          "name": "Celery (Per Kg)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.121,
-          "grams_per_unit": 121.21
-        },
-        {
-          "name": "Garlic Peeled (Per Kg)",
-          "group": "FOOD",
-          "qty": 0.6,
-          "unit": "KG",
-          "grams": 600.0,
-          "per_unit": 0.036,
-          "grams_per_unit": 36.36
-        },
-        {
-          "name": "Minced Chicken (Per Kg)",
-          "group": "FOOD",
-          "qty": 24.0,
-          "unit": "KG",
-          "grams": 24000.0,
-          "per_unit": 1.455,
-          "grams_per_unit": 1454.55
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 0.5,
-          "unit": "KG",
-          "grams": 500.0,
-          "per_unit": 0.03,
-          "grams_per_unit": 30.3
-        },
-        {
-          "name": "Palmdale Tomato Puree (3Kg X 6Tin X 1Ctn)",
-          "group": "FOOD",
-          "qty": 18.0,
-          "unit": "KG",
-          "grams": 18000.0,
-          "per_unit": 1.091,
-          "grams_per_unit": 1090.91
-        },
-        {
-          "name": "Black Pepper Coarse (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.12,
-          "unit": "KG",
-          "grams": 120.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 7.27
-        },
-        {
-          "name": "Hosen Mushroom Sliced (2.84Kg X 6Tin X 1Ctn)",
-          "group": "FOOD",
-          "qty": 2.84,
-          "unit": "KG",
-          "grams": 2840.0,
-          "per_unit": 0.172,
-          "grams_per_unit": 172.12
-        },
-        {
-          "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 1.7,
-          "unit": "KG",
-          "grams": 1700.0,
-          "per_unit": 0.103,
-          "grams_per_unit": 103.03
-        },
-        {
-          "name": "Mixed Herbs Whole (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.12,
-          "unit": "KG",
-          "grams": 120.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 7.27
-        },
-        {
-          "name": "Yellow Onion",
-          "group": "FOOD",
-          "qty": 5.0,
-          "unit": "KG",
-          "grams": 5000.0,
-          "per_unit": 0.303,
-          "grams_per_unit": 303.03
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MY US CARBONARA 2KG",
-      "yield_qty": 18.0,
-      "yield_unit": "PKT",
-      "dimension": "2 KG X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Anchor Extra Yield Cooking Cream (1L X 12Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 10.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.556,
+          "name": "NYLON PE 14X20 (2KG) (60PCS X 15PKT X 1CTN)",
+          "code": "CKRM00067",
+          "group": "PACKAGING",
+          "qty": 10,
+          "unit": "PCS",
+          "per_unit": 0.0833,
           "grams_per_unit": null
         },
         {
-          "name": "Flour Diamond (25Kg X 1Guni)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.111,
-          "grams_per_unit": 111.11
+          "name": "ICE",
+          "code": "USRW00072",
+          "group": "BEVERAGE",
+          "qty": 800,
+          "unit": "GM",
+          "per_unit": 6.6667,
+          "grams_per_unit": 6.667
         },
         {
-          "name": "Garlic Peeled (Per Kg)",
+          "name": "INSTANT YEAST (500GM X 20PKT X 1CTN)",
+          "code": "CKRM00035",
           "group": "FOOD",
-          "qty": 0.3,
-          "unit": "KG",
-          "grams": 300.0,
-          "per_unit": 0.017,
-          "grams_per_unit": 16.67
-        },
-        {
-          "name": "Lc Planta Chef (4.8Kg X 2Tub X 1Ctn)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.111,
-          "grams_per_unit": 111.11
-        },
-        {
-          "name": "Black Pepper Coarse (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.15,
-          "unit": "KG",
-          "grams": 150.0,
-          "per_unit": 0.008,
-          "grams_per_unit": 8.33
-        },
-        {
-          "name": "Hosen Mushroom Sliced (2.84Kg X 6Tin X 1Ctn)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.111,
-          "grams_per_unit": 111.11
-        },
-        {
-          "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 1.2,
-          "unit": "KG",
-          "grams": 1200.0,
-          "per_unit": 0.067,
-          "grams_per_unit": 66.67
-        },
-        {
-          "name": "Yellow Onion",
-          "group": "FOOD",
-          "qty": 1.0,
-          "unit": "KG",
-          "grams": 1000.0,
-          "per_unit": 0.056,
-          "grams_per_unit": 55.56
+          "qty": 76,
+          "unit": "GM",
+          "per_unit": 0.6333,
+          "grams_per_unit": 0.633
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
-      "name": "MY US CONCASSE SAUCE 3KG",
-      "yield_qty": 16.5,
-      "yield_unit": "PKT",
-      "dimension": "3 KG X 1 PKT",
-      "ingredients": [
-        {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 14.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.848,
-          "grams_per_unit": null
-        },
-        {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
-          "group": "FOOD",
-          "qty": 4.0,
-          "unit": "KG",
-          "grams": 4000.0,
-          "per_unit": 0.242,
-          "grams_per_unit": 242.42
-        },
-        {
-          "name": "Bay Leave Whole (500Gm X Pkt)",
-          "group": "FOOD",
-          "qty": 0.06,
-          "unit": "KG",
-          "grams": 60.0,
-          "per_unit": 0.004,
-          "grams_per_unit": 3.64
-        },
-        {
-          "name": "Carrot (Per Kg)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.121,
-          "grams_per_unit": 121.21
-        },
-        {
-          "name": "Celery (Per Kg)",
-          "group": "FOOD",
-          "qty": 2.0,
-          "unit": "KG",
-          "grams": 2000.0,
-          "per_unit": 0.121,
-          "grams_per_unit": 121.21
-        },
-        {
-          "name": "Garlic Peeled (Per Kg)",
-          "group": "FOOD",
-          "qty": 0.6,
-          "unit": "KG",
-          "grams": 600.0,
-          "per_unit": 0.036,
-          "grams_per_unit": 36.36
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 1.0,
-          "unit": "KG",
-          "grams": 1000.0,
-          "per_unit": 0.061,
-          "grams_per_unit": 60.61
-        },
-        {
-          "name": "Palmdale Tomato Puree (3Kg X 6Tin X 1Ctn)",
-          "group": "FOOD",
-          "qty": 18.0,
-          "unit": "KG",
-          "grams": 18000.0,
-          "per_unit": 1.091,
-          "grams_per_unit": 1090.91
-        },
-        {
-          "name": "Black Pepper Coarse (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.16,
-          "unit": "KG",
-          "grams": 160.0,
-          "per_unit": 0.01,
-          "grams_per_unit": 9.7
-        },
-        {
-          "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 1.3,
-          "unit": "KG",
-          "grams": 1300.0,
-          "per_unit": 0.079,
-          "grams_per_unit": 78.79
-        },
-        {
-          "name": "Mixed Herbs Whole (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.07,
-          "unit": "KG",
-          "grams": 70.0,
-          "per_unit": 0.004,
-          "grams_per_unit": 4.24
-        },
-        {
-          "name": "Yellow Onion",
-          "group": "FOOD",
-          "qty": 16.0,
-          "unit": "KG",
-          "grams": 16000.0,
-          "per_unit": 0.97,
-          "grams_per_unit": 969.7
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MY US DUNCAN SAUCE SFG",
-      "yield_qty": 16.0,
+      "code": "RCP-00005",
+      "name": "Italiano Chicken",
+      "category": "MEAT",
+      "yield_qty": 62,
       "yield_unit": "PKT",
       "dimension": "1 KG X 1 PKT",
       "ingredients": [
         {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 7.5,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.469,
-          "grams_per_unit": null
-        },
-        {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
-          "group": "FOOD",
-          "qty": 0.225,
-          "unit": "KG",
-          "grams": 225.0,
-          "per_unit": 0.014,
-          "grams_per_unit": 14.06
-        },
-        {
-          "name": "40Kg Australian Fine Salt",
-          "group": "FOOD",
-          "qty": 0.04,
-          "unit": "KG",
-          "grams": 40.0,
-          "per_unit": 0.003,
-          "grams_per_unit": 2.5
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
+          "name": "HOSEN PURE HONEY (1KG X 12TUB X 1CTN)",
+          "code": "USRW00070",
           "group": "FOOD",
           "qty": 0.75,
           "unit": "KG",
-          "grams": 750.0,
-          "per_unit": 0.047,
-          "grams_per_unit": 46.88
+          "per_unit": 0.0121,
+          "grams_per_unit": 12.097
         },
         {
-          "name": "Mixed Herbs Whole (1Kg X Pkt)",
+          "name": "KNORR ITALIAN HERB PASTE (1.5KG X 6PKT X 1CTN)",
+          "code": "CKRM00038",
           "group": "FOOD",
-          "qty": 0.06,
+          "qty": 4.5,
           "unit": "KG",
-          "grams": 60.0,
-          "per_unit": 0.004,
-          "grams_per_unit": 3.75
+          "per_unit": 0.0726,
+          "grams_per_unit": 72.581
+        },
+        {
+          "name": "SBL FREE SIZE (FROZEN) (PER KG)",
+          "code": "CKRM00072",
+          "group": "FOOD",
+          "qty": 100,
+          "unit": "KG",
+          "per_unit": 1.6129,
+          "grams_per_unit": 1612.903
+        },
+        {
+          "name": "MIXED HERBS WHOLE (1KG X PKT)",
+          "code": "USRW00104",
+          "group": "FOOD",
+          "qty": 0.07,
+          "unit": "KG",
+          "per_unit": 0.0011,
+          "grams_per_unit": 1.129
+        },
+        {
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
+          "group": "FOOD",
+          "qty": 1.5,
+          "unit": "KG",
+          "per_unit": 0.0242,
+          "grams_per_unit": 24.194
+        },
+        {
+          "name": "CARTON BOX MEDIUM - US PIZZA 420MM X 320MM X 220MM TL150/M150/M150/TL150 ",
+          "code": "CKRM00080",
+          "group": "PACKAGING",
+          "qty": 7,
+          "unit": "PCS",
+          "per_unit": 0.1129,
+          "grams_per_unit": null
+        },
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 62,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
-      "name": "MY US DUNCAN SAUCE(1KG)",
-      "yield_qty": 80.0,
+      "code": "RCP-00006",
+      "name": "Spicy Chicken",
+      "category": "MEAT",
+      "yield_qty": 110,
+      "yield_unit": "PKT",
+      "dimension": "500 GM X 1 PKT",
+      "ingredients": [
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 110,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "CARTON BOX SMALL - US PIZZA 250MM X 200MM X 180MM TL150/M120/M120/TL150 ",
+          "code": "CKRM00081",
+          "group": "PACKAGING",
+          "qty": 25,
+          "unit": "PCS",
+          "per_unit": 0.2273,
+          "grams_per_unit": null
+        },
+        {
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
+          "group": "FOOD",
+          "qty": 0.8,
+          "unit": "KG",
+          "per_unit": 0.0073,
+          "grams_per_unit": 7.273
+        },
+        {
+          "name": "BABAS CHILI POWDER (1KG X 10PKT X 1CTN)",
+          "code": "USRW00015",
+          "group": "FOOD",
+          "qty": 1,
+          "unit": "KG",
+          "per_unit": 0.0091,
+          "grams_per_unit": 9.091
+        },
+        {
+          "name": "SBL FREE SIZE (FROZEN) (PER KG)",
+          "code": "CKRM00072",
+          "group": "FOOD",
+          "qty": 100,
+          "unit": "KG",
+          "per_unit": 0.9091,
+          "grams_per_unit": 909.091
+        },
+        {
+          "name": "BABAS MEAT CURRY POWDER (1KG X 10PKT X 1CTN)",
+          "code": "CKRM00009",
+          "group": "FOOD",
+          "qty": 0.9,
+          "unit": "KG",
+          "per_unit": 0.0082,
+          "grams_per_unit": 8.182
+        }
+      ]
+    },
+    {
+      "code": "RCP-00007",
+      "name": "Ground Beef",
+      "category": "MEAT",
+      "yield_qty": 62,
+      "yield_unit": "PKT",
+      "dimension": "200 G X 1 PKT",
+      "ingredients": [
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 1.2,
+          "unit": "KG",
+          "per_unit": 0.0194,
+          "grams_per_unit": 19.355
+        },
+        {
+          "name": "MIXED HERBS WHOLE (1KG X PKT)",
+          "code": "USRW00104",
+          "group": "FOOD",
+          "qty": 0.15,
+          "unit": "KG",
+          "per_unit": 0.0024,
+          "grams_per_unit": 2.419
+        },
+        {
+          "name": "MINCED BEEF (2.5KG X PKT)",
+          "code": "CKRM00051",
+          "group": "FOOD",
+          "qty": 25,
+          "unit": "KG",
+          "per_unit": 0.4032,
+          "grams_per_unit": 403.226
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 62,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "CARTON BOX SMALL - US PIZZA 250MM X 200MM X 180MM TL150/M120/M120/TL150 ",
+          "code": "CKRM00081",
+          "group": "PACKAGING",
+          "qty": 7,
+          "unit": "PCS",
+          "per_unit": 0.1129,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00008",
+      "name": "Chicken Wing",
+      "category": "MEAT",
+      "yield_qty": 36,
+      "yield_unit": "PKT",
+      "dimension": "30 PAIRS X 1 PKT",
+      "ingredients": [
+        {
+          "name": "NYLON 12X18 (200PCS X PKT)",
+          "code": "CKRM00058",
+          "group": "PACKAGING",
+          "qty": 36,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "CARTON BOX LARGE - US PIZZA 510MM X 310MM X 268MM TL150/M150/M150/TL150 ",
+          "code": "CKRM00079",
+          "group": "PACKAGING",
+          "qty": 4,
+          "unit": "PCS",
+          "per_unit": 0.1111,
+          "grams_per_unit": null
+        },
+        {
+          "name": "BABAS CHILI POWDER (1KG X 10PKT X 1CTN)",
+          "code": "USRW00015",
+          "group": "FOOD",
+          "qty": 0.9,
+          "unit": "KG",
+          "per_unit": 0.025,
+          "grams_per_unit": 25.0
+        },
+        {
+          "name": "MID JOINT WING (PER KG)",
+          "code": "CKRM00050",
+          "group": "FOOD",
+          "qty": 40,
+          "unit": "KG",
+          "per_unit": 1.1111,
+          "grams_per_unit": 1111.111
+        },
+        {
+          "name": "BABAS MEAT CURRY POWDER (1KG X 10PKT X 1CTN)",
+          "code": "CKRM00009",
+          "group": "FOOD",
+          "qty": 0.9,
+          "unit": "KG",
+          "per_unit": 0.025,
+          "grams_per_unit": 25.0
+        },
+        {
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
+          "group": "FOOD",
+          "qty": 0.9,
+          "unit": "KG",
+          "per_unit": 0.025,
+          "grams_per_unit": 25.0
+        },
+        {
+          "name": "DRUMMET (WING) (PER KG)",
+          "code": "CKRM00027",
+          "group": "FOOD",
+          "qty": 60,
+          "unit": "KG",
+          "per_unit": 1.6667,
+          "grams_per_unit": 1666.667
+        }
+      ]
+    },
+    {
+      "code": "RCP-00009",
+      "name": "Beef Patty",
+      "category": "MEAT",
+      "yield_qty": 64,
+      "yield_unit": "PKT",
+      "dimension": "4 PCS X 1 PKT",
+      "ingredients": [
+        {
+          "name": "AUST BRISKET (PER KG)",
+          "code": "CKRM00007",
+          "group": "FOOD",
+          "qty": 25,
+          "unit": "KG",
+          "per_unit": 0.3906,
+          "grams_per_unit": 390.625
+        },
+        {
+          "name": "AUST BEEF CHUCK ROLL (PER KG)",
+          "code": "CKRM00006",
+          "group": "FOOD",
+          "qty": 8,
+          "unit": "KG",
+          "per_unit": 0.125,
+          "grams_per_unit": 125.0
+        },
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 64,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "PLASTIC - HM 6 X 9 (500GM X 60PKT X GUNI) - FOR SPAGHETTI",
+          "code": "USRW00065",
+          "group": "PACKAGING",
+          "qty": 0.5,
+          "unit": "PKT",
+          "per_unit": 0.0078,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00010",
+      "name": "Chicken Patty",
+      "category": "MEAT",
+      "yield_qty": 44,
+      "yield_unit": "PKT",
+      "dimension": "4 PCS X 1 PKT",
+      "ingredients": [
+        {
+          "name": "PLASTIC - HM 6 X 9 (500GM X 60PKT X GUNI) - FOR SPAGHETTI",
+          "code": "USRW00065",
+          "group": "PACKAGING",
+          "qty": 0.5,
+          "unit": "PKT",
+          "per_unit": 0.0114,
+          "grams_per_unit": null
+        },
+        {
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
+          "group": "FOOD",
+          "qty": 0.24,
+          "unit": "KG",
+          "per_unit": 0.0055,
+          "grams_per_unit": 5.455
+        },
+        {
+          "name": "ANCHOR SALTED BUTTER 25KG",
+          "code": "CKRM00005",
+          "group": "FOOD",
+          "qty": 0.6,
+          "unit": "KG",
+          "per_unit": 0.0136,
+          "grams_per_unit": 13.636
+        },
+        {
+          "name": "BONELESS BREAST SKIN ON ( PER KG )",
+          "code": "CKRM00014",
+          "group": "FOOD",
+          "qty": 24,
+          "unit": "KG",
+          "per_unit": 0.5455,
+          "grams_per_unit": 545.455
+        },
+        {
+          "name": "WHITE PEPPER (500GM X PKT)",
+          "code": "CKRM00083",
+          "group": "FOOD",
+          "qty": 0.24,
+          "unit": "KG",
+          "per_unit": 0.0055,
+          "grams_per_unit": 5.455
+        },
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 44,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00011",
+      "name": "Umami Beef Sauce",
+      "category": "MEAT",
+      "yield_qty": 3,
+      "yield_unit": "PKT",
+      "dimension": "500 G X 1 PKT",
+      "ingredients": [
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 3,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "MOREHOUSE PURE MUSTARD 1 GAL",
+          "code": "CKRM00057",
+          "group": "FOOD",
+          "qty": 130,
+          "unit": "GM",
+          "per_unit": 43.3333,
+          "grams_per_unit": 43.333
+        },
+        {
+          "name": "ANCHOR SALTED BUTTER 25KG",
+          "code": "CKRM00005",
+          "group": "FOOD",
+          "qty": 30,
+          "unit": "GM",
+          "per_unit": 10.0,
+          "grams_per_unit": 10.0
+        },
+        {
+          "name": "HEINZ ORIGINAL BBQ SAUCE (2.2KG X 6BTL X 1CTN)",
+          "code": "USRW00064",
+          "group": "FOOD",
+          "qty": 350,
+          "unit": "GM",
+          "per_unit": 116.6667,
+          "grams_per_unit": 116.667
+        },
+        {
+          "name": "LEA PERRIN SAUCE (290ML X 12BTL X 1CTN)",
+          "code": "CKRM00045",
+          "group": "FOOD",
+          "qty": 10,
+          "unit": "GM",
+          "per_unit": 3.3333,
+          "grams_per_unit": 3.333
+        },
+        {
+          "name": "BROWN SUGAR",
+          "code": "CKRM00015",
+          "group": "FOOD",
+          "qty": 130,
+          "unit": "GM",
+          "per_unit": 43.3333,
+          "grams_per_unit": 43.333
+        },
+        {
+          "name": "BLACK PEPPER COARSE (1KG X PKT)",
+          "code": "USRW00022",
+          "group": "FOOD",
+          "qty": 25,
+          "unit": "GM",
+          "per_unit": 8.3333,
+          "grams_per_unit": 8.333
+        },
+        {
+          "name": "MINCED BEEF (2.5KG X PKT)",
+          "code": "CKRM00051",
+          "group": "FOOD",
+          "qty": 0.9,
+          "unit": "KG",
+          "per_unit": 0.3,
+          "grams_per_unit": 300.0
+        },
+        {
+          "name": "LIFE TOMATO KETCHUP (1KG X 12PKT X 1CTN)",
+          "code": "CKRM00048",
+          "group": "FOOD",
+          "qty": 0.38,
+          "unit": "KG",
+          "per_unit": 0.1267,
+          "grams_per_unit": 126.667
+        }
+      ]
+    },
+    {
+      "code": "RCP-00012",
+      "name": "Ice Tea Premix",
+      "category": "PREMIX",
+      "yield_qty": 1,
       "yield_unit": "PKT",
       "dimension": "1 KG X 1 PKT",
       "ingredients": [
         {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 37.5,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.469,
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 1,
+          "unit": "KG",
+          "per_unit": 1.0,
+          "grams_per_unit": 1000.0
+        },
+        {
+          "name": "LIPTON EXTRA KAW CATERING POTBAG (12GM X 10PCS X 36PKT X 1CTN)",
+          "code": "CKRM00049",
+          "group": "BEVERAGE",
+          "qty": 3,
+          "unit": "PCS",
+          "per_unit": 3.0,
           "grams_per_unit": null
         },
         {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
-          "group": "FOOD",
-          "qty": 1.125,
-          "unit": "KG",
-          "grams": 1125.0,
-          "per_unit": 0.014,
-          "grams_per_unit": 14.06
+          "name": "CARTON BOX MEDIUM - US PIZZA 420MM X 320MM X 220MM TL150/M150/M150/TL150 ",
+          "code": "CKRM00080",
+          "group": "PACKAGING",
+          "qty": 0.1,
+          "unit": "PCS",
+          "per_unit": 0.1,
+          "grams_per_unit": null
         },
         {
-          "name": "40Kg Australian Fine Salt",
-          "group": "FOOD",
-          "qty": 0.2,
-          "unit": "KG",
-          "grams": 200.0,
-          "per_unit": 0.003,
-          "grams_per_unit": 2.5
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 3.75,
-          "unit": "KG",
-          "grams": 3750.0,
-          "per_unit": 0.047,
-          "grams_per_unit": 46.88
-        },
-        {
-          "name": "Mixed Herbs Whole (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.3,
-          "unit": "KG",
-          "grams": 300.0,
-          "per_unit": 0.004,
-          "grams_per_unit": 3.75
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 1,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
-      "name": "MY US GARLIC BUTTER (1KG)",
-      "yield_qty": 32.0,
+      "code": "RCP-00013",
+      "name": "Mushroom Soup Premix",
+      "category": "PREMIX",
+      "yield_qty": 1,
       "yield_unit": "PKT",
-      "dimension": "1 KG X 1 PKT",
+      "dimension": "1 PKT",
       "ingredients": [
         {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 5.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.156,
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 1,
+          "unit": "PCS",
+          "per_unit": 1.0,
           "grams_per_unit": null
         },
         {
-          "name": "40Kg Australian Fine Salt",
-          "group": "FOOD",
-          "qty": 0.13,
-          "unit": "KG",
-          "grams": 130.0,
-          "per_unit": 0.004,
-          "grams_per_unit": 4.06
+          "name": "CARTON BOX SMALL - US PIZZA 250MM X 200MM X 180MM TL150/M120/M120/TL150 ",
+          "code": "CKRM00081",
+          "group": "PACKAGING",
+          "qty": 0.1,
+          "unit": "PCS",
+          "per_unit": 0.1,
+          "grams_per_unit": null
         },
         {
-          "name": "Garlic Peeled (Per Kg)",
+          "name": "KNORR CHICKEN STOCK (1KG X 8PKT X 1CTN)",
+          "code": "USRW00076",
           "group": "FOOD",
-          "qty": 8.0,
+          "qty": 0.025,
           "unit": "KG",
-          "grams": 8000.0,
+          "per_unit": 0.025,
+          "grams_per_unit": 25.0
+        },
+        {
+          "name": "TEPUNG UBI KAYU 3A (20KG X PKT)",
+          "code": "CKRM00076",
+          "group": "FOOD",
+          "qty": 0.04,
+          "unit": "KG",
+          "per_unit": 0.04,
+          "grams_per_unit": 40.0
+        },
+        {
+          "name": "KNORR CREAM OF MUSHROOM SOUP (1KG X 6PKT X 1CTN)",
+          "code": "CKRM00036",
+          "group": "FOOD",
+          "qty": 0.25,
+          "unit": "KG",
           "per_unit": 0.25,
           "grams_per_unit": 250.0
-        },
-        {
-          "name": "Parsley Whole Flakes 1Kg",
-          "group": "FOOD",
-          "qty": 100.0,
-          "unit": "GM",
-          "grams": 100.0,
-          "per_unit": 3.125,
-          "grams_per_unit": 3.12
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
-      "name": "MY US ITALIANO MAYO (500GM)",
-      "yield_qty": 30.0,
+      "code": "RCP-00014",
+      "name": "Dough Premix",
+      "category": "PREMIX",
+      "yield_qty": 1,
+      "yield_unit": "PKT",
+      "dimension": "1 PKT",
+      "ingredients": [
+        {
+          "name": "PIZZA MIX 15KG",
+          "code": "USRW00347",
+          "group": "FOOD",
+          "qty": 340,
+          "unit": "GM",
+          "per_unit": 340.0,
+          "grams_per_unit": 340.0
+        },
+        {
+          "name": "PINNACLE  BREAD IMPROVER - VOLTEX",
+          "code": "CKRM00069",
+          "group": "FOOD",
+          "qty": 50,
+          "unit": "GM",
+          "per_unit": 50.0,
+          "grams_per_unit": 50.0
+        },
+        {
+          "name": "INSTANT YEAST (500GM X 20PKT X 1CTN)",
+          "code": "CKRM00035",
+          "group": "FOOD",
+          "qty": 100,
+          "unit": "GM",
+          "per_unit": 100.0,
+          "grams_per_unit": 100.0
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 1,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00015",
+      "name": "Cinnamon Sugar Premix",
+      "category": "PREMIX",
+      "yield_qty": 11,
+      "yield_unit": "PKT",
+      "dimension": "1 KG X 1 PKT",
+      "ingredients": [
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 11,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 10,
+          "unit": "KG",
+          "per_unit": 0.9091,
+          "grams_per_unit": 909.091
+        },
+        {
+          "name": "CINNAMON POWDER (1KG X PKT)",
+          "code": "CKRM00022",
+          "group": "FOOD",
+          "qty": 1,
+          "unit": "KG",
+          "per_unit": 0.0909,
+          "grams_per_unit": 90.909
+        }
+      ]
+    },
+    {
+      "code": "RCP-00016",
+      "name": "Pickle Jam",
+      "category": "SAUCES",
+      "yield_qty": 1,
       "yield_unit": "PKT",
       "dimension": "500G X 1 PKT",
       "ingredients": [
         {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 2.4,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.08,
-          "grams_per_unit": null
+          "name": "HOSEN PURE HONEY (1KG X 12TUB X 1CTN)",
+          "code": "USRW00070",
+          "group": "FOOD",
+          "qty": 100,
+          "unit": "GM",
+          "per_unit": 100.0,
+          "grams_per_unit": 100.0
         },
         {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
+          "name": "HOSEN SELECT GHERKINS 12/680GM",
+          "code": "CKRM00034",
           "group": "FOOD",
-          "qty": 0.12,
-          "unit": "KG",
-          "grams": 120.0,
-          "per_unit": 0.004,
-          "grams_per_unit": 4.0
-        },
-        {
-          "name": "Knorr Italian Herb Paste (1.5Kg X 6Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.72,
-          "unit": "KG",
-          "grams": 720.0,
-          "per_unit": 0.024,
-          "grams_per_unit": 24.0
-        },
-        {
-          "name": "Lady'S Choice Mayo Magic (3L X 4Tub X 1Ctn)",
-          "group": "FOOD",
-          "qty": 12.0,
-          "unit": "KG",
-          "grams": 12000.0,
-          "per_unit": 0.4,
+          "qty": 400,
+          "unit": "GM",
+          "per_unit": 400.0,
           "grams_per_unit": 400.0
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 1,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
-      "name": "MY US ITALIANO SAUCE (1KG)",
-      "yield_qty": 20.0,
+      "code": "RCP-00017",
+      "name": "MARSHALL'S SAUCE (500G)",
+      "category": "SAUCES",
+      "yield_qty": 8,
       "yield_unit": "PKT",
-      "dimension": "1 KG X 1 PKT",
+      "dimension": "500G X 1 PKT",
       "ingredients": [
         {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 15.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.75,
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 8,
+          "unit": "PCS",
+          "per_unit": 1.0,
           "grams_per_unit": null
         },
         {
-          "name": "Anchor Extra Yield Cooking Cream (1L X 12Pkt X 1Ctn)",
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
           "group": "FOOD",
-          "qty": 3.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.15,
-          "grams_per_unit": null
+          "qty": 60,
+          "unit": "GM",
+          "per_unit": 7.5,
+          "grams_per_unit": 7.5
         },
         {
-          "name": "Knorr Sauce Mix Carbonara (Ps) (750Gm X 6Pkt X 1Ctn)",
+          "name": "LIFE TOMATO KETCHUP (1KG X 12PKT X 1CTN)",
+          "code": "CKRM00048",
           "group": "FOOD",
-          "qty": 3.0,
+          "qty": 600,
+          "unit": "GM",
+          "per_unit": 75.0,
+          "grams_per_unit": 75.0
+        },
+        {
+          "name": "MOREHOUSE PURE MUSTARD 1 GAL",
+          "code": "CKRM00057",
+          "group": "FOOD",
+          "qty": 280,
+          "unit": "GM",
+          "per_unit": 35.0,
+          "grams_per_unit": 35.0
+        },
+        {
+          "name": "LEA PERRIN SAUCE (290ML X 12BTL X 1CTN)",
+          "code": "CKRM00045",
+          "group": "FOOD",
+          "qty": 75,
+          "unit": "GM",
+          "per_unit": 9.375,
+          "grams_per_unit": 9.375
+        },
+        {
+          "name": "BROWN SUGAR",
+          "code": "CKRM00015",
+          "group": "FOOD",
+          "qty": 20,
+          "unit": "GM",
+          "per_unit": 2.5,
+          "grams_per_unit": 2.5
+        },
+        {
+          "name": "CAYENNE POWDER (1KG X PKT)",
+          "code": "CKRM00019",
+          "group": "FOOD",
+          "qty": 20,
+          "unit": "GM",
+          "per_unit": 2.5,
+          "grams_per_unit": 2.5
+        },
+        {
+          "name": "LIFE CHILI SAUCE (1KG X 12PKT X 1CTN)",
+          "code": "CKRM00047",
+          "group": "FOOD",
+          "qty": 600,
+          "unit": "GM",
+          "per_unit": 75.0,
+          "grams_per_unit": 75.0
+        },
+        {
+          "name": "LADY'S CHOICE MAYO MAGIC (3L X 4TUB X 1CTN)",
+          "code": "CKRM00043",
+          "group": "FOOD",
+          "qty": 2500,
+          "unit": "GM",
+          "per_unit": 312.5,
+          "grams_per_unit": 312.5
+        },
+        {
+          "name": "TABASCO SAUCE (60ML X 12PCS X 1CTN)",
+          "code": "USRW00173",
+          "group": "FOOD",
+          "qty": 45,
+          "unit": "ML",
+          "per_unit": 5.625,
+          "grams_per_unit": 5.625
+        }
+      ]
+    },
+    {
+      "code": "RCP-00018",
+      "name": "MARSHALL'S SPICY SAUCE (500G)",
+      "category": "SAUCES",
+      "yield_qty": 6,
+      "yield_unit": "PKT",
+      "dimension": "500G X 1 PKT",
+      "ingredients": [
+        {
+          "name": "MOREHOUSE PURE MUSTARD 1 GAL",
+          "code": "CKRM00057",
+          "group": "FOOD",
+          "qty": 170,
+          "unit": "GM",
+          "per_unit": 28.3333,
+          "grams_per_unit": 28.333
+        },
+        {
+          "name": "BROWN SUGAR",
+          "code": "CKRM00015",
+          "group": "FOOD",
+          "qty": 0.04,
           "unit": "KG",
-          "grams": 3000.0,
-          "per_unit": 0.15,
-          "grams_per_unit": 150.0
+          "per_unit": 0.0067,
+          "grams_per_unit": 6.667
         },
         {
-          "name": "Tepung Ubi Kayu 3A (20Kg X Pkt)",
+          "name": "BLACK PEPPER COARSE (1KG X PKT)",
+          "code": "USRW00022",
+          "group": "FOOD",
+          "qty": 0.02,
+          "unit": "KG",
+          "per_unit": 0.0033,
+          "grams_per_unit": 3.333
+        },
+        {
+          "name": "LEA PERRIN SAUCE (290ML X 12BTL X 1CTN)",
+          "code": "CKRM00045",
+          "group": "FOOD",
+          "qty": 0.1,
+          "unit": "KG",
+          "per_unit": 0.0167,
+          "grams_per_unit": 16.667
+        },
+        {
+          "name": "HEINZ ORIGINAL BBQ SAUCE (2.2KG X 6BTL X 1CTN)",
+          "code": "USRW00064",
+          "group": "FOOD",
+          "qty": 0.2,
+          "unit": "KG",
+          "per_unit": 0.0333,
+          "grams_per_unit": 33.333
+        },
+        {
+          "name": "LIFE CHILI SAUCE (1KG X 12PKT X 1CTN)",
+          "code": "CKRM00047",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.3333,
+          "grams_per_unit": 333.333
+        },
+        {
+          "name": "LIFE TOMATO KETCHUP (1KG X 12PKT X 1CTN)",
+          "code": "CKRM00048",
+          "group": "FOOD",
+          "qty": 1,
+          "unit": "KG",
+          "per_unit": 0.1667,
+          "grams_per_unit": 166.667
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 6,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00019",
+      "name": "MARSHAL'S NACHO CHEESE SAUCE (500G)",
+      "category": "SAUCES",
+      "yield_qty": 20,
+      "yield_unit": "PKT",
+      "dimension": "500 G X 1 PKT",
+      "ingredients": [
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 2,
+          "unit": "LTR",
+          "per_unit": 0.1,
+          "grams_per_unit": 100.0
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 10,
+          "unit": "PCS",
+          "per_unit": 0.5,
+          "grams_per_unit": null
+        },
+        {
+          "name": "SWISS BEAR NACHO CHEESE SAUCE 1KG/12PKT/CTN ",
+          "code": "USRW00171",
+          "group": "FOOD",
+          "qty": 10000,
+          "unit": "GM",
+          "per_unit": 500.0,
+          "grams_per_unit": 500.0
+        }
+      ]
+    },
+    {
+      "code": "RCP-00020",
+      "name": "MY US BOLOGNESE SAUCE (500GM)",
+      "category": "SAUCES",
+      "yield_qty": 100,
+      "yield_unit": "PKT",
+      "dimension": "500G X 1 PKT",
+      "ingredients": [
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 0.5,
+          "unit": "KG",
+          "per_unit": 0.005,
+          "grams_per_unit": 5.0
+        },
+        {
+          "name": "PALMDALE TOMATO PUREE (3KG X 6TIN X 1CTN)",
+          "code": "CKRM00065",
+          "group": "FOOD",
+          "qty": 18,
+          "unit": "KG",
+          "per_unit": 0.18,
+          "grams_per_unit": 180.0
+        },
+        {
+          "name": "ANCHOR SALTED BUTTER 25KG",
+          "code": "CKRM00005",
+          "group": "FOOD",
+          "qty": 2.5,
+          "unit": "KG",
+          "per_unit": 0.025,
+          "grams_per_unit": 25.0
+        },
+        {
+          "name": "MINCED CHICKEN (PER KG)",
+          "code": "CKRM00052",
+          "group": "FOOD",
+          "qty": 24,
+          "unit": "KG",
+          "per_unit": 0.24,
+          "grams_per_unit": 240.0
+        },
+        {
+          "name": "KNORR CHICKEN STOCK (1KG X 8PKT X 1CTN)",
+          "code": "USRW00076",
+          "group": "FOOD",
+          "qty": 1.7,
+          "unit": "KG",
+          "per_unit": 0.017,
+          "grams_per_unit": 17.0
+        },
+        {
+          "name": "BAY LEAVE WHOLE (500GM X PKT)",
+          "code": "CKRM00013",
+          "group": "FOOD",
+          "qty": 0.02,
+          "unit": "KG",
+          "per_unit": 0.0002,
+          "grams_per_unit": 0.2
+        },
+        {
+          "name": "BLACK PEPPER COARSE (1KG X PKT)",
+          "code": "USRW00022",
           "group": "FOOD",
           "qty": 0.12,
           "unit": "KG",
-          "grams": 120.0,
+          "per_unit": 0.0012,
+          "grams_per_unit": 1.2
+        },
+        {
+          "name": "HOSEN MUSHROOM SLICED (2.84KG X 6TIN X 1CTN)",
+          "code": "USRW00067",
+          "group": "FOOD",
+          "qty": 2.84,
+          "unit": "KG",
+          "per_unit": 0.0284,
+          "grams_per_unit": 28.4
+        },
+        {
+          "name": "MIXED HERBS WHOLE (1KG X PKT)",
+          "code": "USRW00104",
+          "group": "FOOD",
+          "qty": 0.12,
+          "unit": "KG",
+          "per_unit": 0.0012,
+          "grams_per_unit": 1.2
+        },
+        {
+          "name": "GARLIC PEELED (PER KG)",
+          "code": "CKRM00030",
+          "group": "FOOD",
+          "qty": 0.6,
+          "unit": "KG",
           "per_unit": 0.006,
           "grams_per_unit": 6.0
         },
         {
-          "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
+          "name": "CELERY (PER KG)",
+          "code": "CKRM00020",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.02,
+          "grams_per_unit": 20.0
+        },
+        {
+          "name": "YELLOW ONION",
+          "code": "USRW00189",
+          "group": "FOOD",
+          "qty": 5,
+          "unit": "KG",
+          "per_unit": 0.05,
+          "grams_per_unit": 50.0
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 10,
+          "unit": "LTR",
+          "per_unit": 0.1,
+          "grams_per_unit": 100.0
+        },
+        {
+          "name": "CARROT (PER KG)",
+          "code": "CKRM00018",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.02,
+          "grams_per_unit": 20.0
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 100,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "CARTON BOX SMALL - US PIZZA 250MM X 200MM X 180MM TL150/M120/M120/TL150 ",
+          "code": "CKRM00081",
+          "group": "PACKAGING",
+          "qty": 10,
+          "unit": "PCS",
+          "per_unit": 0.1,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00021",
+      "name": "MY US CARBONARA 2KG",
+      "category": "SAUCES",
+      "yield_qty": 18,
+      "yield_unit": "PKT",
+      "dimension": "2 KG X 1 PKT",
+      "ingredients": [
+        {
+          "name": "ANCHOR EXTRA YIELD COOKING CREAM (1L X 12PKT X 1CTN)",
+          "code": "CKRM00004",
+          "group": "FOOD",
+          "qty": 10,
+          "unit": "LTR",
+          "per_unit": 0.5556,
+          "grams_per_unit": 555.556
+        },
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 37,
+          "unit": "PCS",
+          "per_unit": 2.0556,
+          "grams_per_unit": null
+        },
+        {
+          "name": "KNORR CHICKEN STOCK (1KG X 8PKT X 1CTN)",
+          "code": "USRW00076",
+          "group": "FOOD",
+          "qty": 1.2,
+          "unit": "KG",
+          "per_unit": 0.0667,
+          "grams_per_unit": 66.667
+        },
+        {
+          "name": "FLOUR DIAMOND (25KG X 1GUNI)",
+          "code": "CKRM00026",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.1111,
+          "grams_per_unit": 111.111
+        },
+        {
+          "name": "GARLIC PEELED (PER KG)",
+          "code": "CKRM00030",
+          "group": "FOOD",
+          "qty": 0.3,
+          "unit": "KG",
+          "per_unit": 0.0167,
+          "grams_per_unit": 16.667
+        },
+        {
+          "name": "BLACK PEPPER COARSE (1KG X PKT)",
+          "code": "USRW00022",
           "group": "FOOD",
           "qty": 0.15,
           "unit": "KG",
-          "grams": 150.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 7.5
+          "per_unit": 0.0083,
+          "grams_per_unit": 8.333
+        },
+        {
+          "name": "HOSEN MUSHROOM SLICED (2.84KG X 6TIN X 1CTN)",
+          "code": "USRW00067",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.1111,
+          "grams_per_unit": 111.111
+        },
+        {
+          "name": "YELLOW ONION",
+          "code": "USRW00189",
+          "group": "FOOD",
+          "qty": 1,
+          "unit": "KG",
+          "per_unit": 0.0556,
+          "grams_per_unit": 55.556
+        },
+        {
+          "name": "LC PLANTA CHEF (4.8KG X 2TUB X 1CTN)",
+          "code": "CKRM00044",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.1111,
+          "grams_per_unit": 111.111
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
+      "code": "RCP-00022",
+      "name": "MY US DUNCAN SAUCE(1KG)",
+      "category": "SAUCES",
+      "yield_qty": 80,
+      "yield_unit": "PKT",
+      "dimension": "1 KG X 1 PKT",
+      "ingredients": [
+        {
+          "name": "MIXED HERBS WHOLE (1KG X PKT)",
+          "code": "USRW00104",
+          "group": "FOOD",
+          "qty": 0.3,
+          "unit": "KG",
+          "per_unit": 0.0037,
+          "grams_per_unit": 3.75
+        },
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 3.75,
+          "unit": "KG",
+          "per_unit": 0.0469,
+          "grams_per_unit": 46.875
+        },
+        {
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
+          "group": "FOOD",
+          "qty": 0.2,
+          "unit": "KG",
+          "per_unit": 0.0025,
+          "grams_per_unit": 2.5
+        },
+        {
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
+          "group": "FOOD",
+          "qty": 1.125,
+          "unit": "KG",
+          "per_unit": 0.0141,
+          "grams_per_unit": 14.062
+        },
+        {
+          "name": "CARTON BOX MEDIUM - US PIZZA 420MM X 320MM X 220MM TL150/M150/M150/TL150 ",
+          "code": "CKRM00080",
+          "group": "PACKAGING",
+          "qty": 6,
+          "unit": "PCS",
+          "per_unit": 0.075,
+          "grams_per_unit": null
+        },
+        {
+          "name": "PALMDALE TOMATO PASTE (3KG X 6TIN X 1CTN)",
+          "code": "CKRM00064",
+          "group": "FOOD",
+          "qty": 15,
+          "unit": "TIN",
+          "per_unit": 0.1875,
+          "grams_per_unit": null
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 37.5,
+          "unit": "LTR",
+          "per_unit": 0.4688,
+          "grams_per_unit": 468.75
+        },
+        {
+          "name": "PET FOIL LL (PLAIN ROLL) 420MM X 500MM X 0.08MM",
+          "code": "CKRM00068",
+          "group": "PACKAGING",
+          "qty": 0.06,
+          "unit": "ROLL",
+          "per_unit": 0.0008,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00023",
+      "name": "MY US GARLIC BUTTER (1KG)",
+      "category": "SAUCES",
+      "yield_qty": 32,
+      "yield_unit": "PKT",
+      "dimension": "1 KG X 1 PKT",
+      "ingredients": [
+        {
+          "name": "LC PLANTA CHEF (4.8KG X 2TUB X 1CTN)",
+          "code": "CKRM00044",
+          "group": "FOOD",
+          "qty": 4,
+          "unit": "TUB",
+          "per_unit": 0.125,
+          "grams_per_unit": null
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 5,
+          "unit": "LTR",
+          "per_unit": 0.1562,
+          "grams_per_unit": 156.25
+        },
+        {
+          "name": "CARTON BOX SMALL - US PIZZA 250MM X 200MM X 180MM TL150/M120/M120/TL150 ",
+          "code": "CKRM00081",
+          "group": "PACKAGING",
+          "qty": 8,
+          "unit": "PCS",
+          "per_unit": 0.25,
+          "grams_per_unit": null
+        },
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 32,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
+          "group": "FOOD",
+          "qty": 0.13,
+          "unit": "KG",
+          "per_unit": 0.0041,
+          "grams_per_unit": 4.062
+        },
+        {
+          "name": "GARLIC PEELED (PER KG)",
+          "code": "CKRM00030",
+          "group": "FOOD",
+          "qty": 8,
+          "unit": "KG",
+          "per_unit": 0.25,
+          "grams_per_unit": 250.0
+        },
+        {
+          "name": "PARSLEY WHOLE FLAKES 1KG",
+          "code": "USRW00133",
+          "group": "FOOD",
+          "qty": 100,
+          "unit": "GM",
+          "per_unit": 3.125,
+          "grams_per_unit": 3.125
+        }
+      ]
+    },
+    {
+      "code": "RCP-00024",
+      "name": "MY US ITALIANO MAYO (500GM)",
+      "category": "SAUCES",
+      "yield_qty": 30,
+      "yield_unit": "PKT",
+      "dimension": "500G X 1 PKT",
+      "ingredients": [
+        {
+          "name": "LADY'S CHOICE MAYO MAGIC (3L X 4TUB X 1CTN)",
+          "code": "CKRM00043",
+          "group": "FOOD",
+          "qty": 12,
+          "unit": "KG",
+          "per_unit": 0.4,
+          "grams_per_unit": 400.0
+        },
+        {
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
+          "group": "FOOD",
+          "qty": 0.12,
+          "unit": "KG",
+          "per_unit": 0.004,
+          "grams_per_unit": 4.0
+        },
+        {
+          "name": "KNORR ITALIAN HERB PASTE (1.5KG X 6PKT X 1CTN)",
+          "code": "CKRM00038",
+          "group": "FOOD",
+          "qty": 0.72,
+          "unit": "KG",
+          "per_unit": 0.024,
+          "grams_per_unit": 24.0
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 2.4,
+          "unit": "LTR",
+          "per_unit": 0.08,
+          "grams_per_unit": 80.0
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 30,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "CARTON BOX SMALL - US PIZZA 250MM X 200MM X 180MM TL150/M120/M120/TL150 ",
+          "code": "CKRM00081",
+          "group": "PACKAGING",
+          "qty": 3,
+          "unit": "PCS",
+          "per_unit": 0.1,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00025",
+      "name": "MY US ITALIANO SAUCE (1KG)",
+      "category": "SAUCES",
+      "yield_qty": 20,
+      "yield_unit": "PKT",
+      "dimension": "1 KG X 1 PKT",
+      "ingredients": [
+        {
+          "name": "CARTON BOX SMALL - US PIZZA 250MM X 200MM X 180MM TL150/M120/M120/TL150 ",
+          "code": "CKRM00081",
+          "group": "PACKAGING",
+          "qty": 5,
+          "unit": "PCS",
+          "per_unit": 0.25,
+          "grams_per_unit": null
+        },
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 20,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 15,
+          "unit": "LTR",
+          "per_unit": 0.75,
+          "grams_per_unit": 750.0
+        },
+        {
+          "name": "ANCHOR EXTRA YIELD COOKING CREAM (1L X 12PKT X 1CTN)",
+          "code": "CKRM00004",
+          "group": "FOOD",
+          "qty": 3,
+          "unit": "LTR",
+          "per_unit": 0.15,
+          "grams_per_unit": 150.0
+        },
+        {
+          "name": "KNORR CHICKEN STOCK (1KG X 8PKT X 1CTN)",
+          "code": "USRW00076",
+          "group": "FOOD",
+          "qty": 0.15,
+          "unit": "KG",
+          "per_unit": 0.0075,
+          "grams_per_unit": 7.5
+        },
+        {
+          "name": "TEPUNG UBI KAYU 3A (20KG X PKT)",
+          "code": "CKRM00076",
+          "group": "FOOD",
+          "qty": 0.12,
+          "unit": "KG",
+          "per_unit": 0.006,
+          "grams_per_unit": 6.0
+        },
+        {
+          "name": "KNORR SAUCE MIX CARBONARA (PS) (750GM X 6PKT X 1CTN)",
+          "code": "CKRM00039",
+          "group": "FOOD",
+          "qty": 3,
+          "unit": "KG",
+          "per_unit": 0.15,
+          "grams_per_unit": 150.0
+        }
+      ]
+    },
+    {
+      "code": "RCP-00026",
+      "name": "MY US LASAGNA (2 PCS)",
+      "category": "SIDE DISHES",
+      "yield_qty": 10,
+      "yield_unit": "PKT",
+      "dimension": "2 PIECES X 1 PACKET",
+      "ingredients": [
+        {
+          "name": "ANCHOR MOZARELLA CHEESE (2KG X 6PKT X 1CTN)",
+          "code": "USRW00009",
+          "group": "FOOD",
+          "qty": 0.5,
+          "unit": "KG",
+          "per_unit": 0.05,
+          "grams_per_unit": 50.0
+        },
+        {
+          "name": "MIXED HERBS WHOLE (1KG X PKT)",
+          "code": "USRW00104",
+          "group": "FOOD",
+          "qty": 4.5,
+          "unit": "GM",
+          "per_unit": 0.45,
+          "grams_per_unit": 0.45
+        },
+        {
+          "name": "MY US BOLOGNESE SAUCE 3KG",
+          "code": "CKSFG0002",
+          "group": "FOOD",
+          "qty": 0.666,
+          "unit": "PKT",
+          "per_unit": 0.0666,
+          "grams_per_unit": null
+        },
+        {
+          "name": "MY US CONCASSE SAUCE 3KG",
+          "code": "CKSFG0004",
+          "group": "FOOD",
+          "qty": 0.333,
+          "unit": "PKT",
+          "per_unit": 0.0333,
+          "grams_per_unit": null
+        },
+        {
+          "name": "MY US ITALIANO SAUCE 3KG",
+          "code": "CKSFG0001",
+          "group": "FOOD",
+          "qty": 0.333,
+          "unit": "PKT",
+          "per_unit": 0.0333,
+          "grams_per_unit": null
+        },
+        {
+          "name": "SAN REMO NO. 100 LARGE SHEET LASAGNA (250GM X 12PKT X CTN)",
+          "code": "CKRM00071",
+          "group": "FOOD",
+          "qty": 2.2,
+          "unit": "PKT",
+          "per_unit": 0.22,
+          "grams_per_unit": null
+        },
+        {
+          "name": "CARTON BOX SMALL - US PIZZA 250MM X 200MM X 180MM TL150/M120/M120/TL150 ",
+          "code": "CKRM00081",
+          "group": "PACKAGING",
+          "qty": 2,
+          "unit": "PCS",
+          "per_unit": 0.2,
+          "grams_per_unit": null
+        },
+        {
+          "name": "NYLON 8X12 (100PCS X PKT)",
+          "code": "CKRM00059",
+          "group": "PACKAGING",
+          "qty": 10,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00027",
+      "name": "MY US SALTED EGG GARLIC PASTE (BASE) (300GM)",
+      "category": "SAUCES",
+      "yield_qty": 90,
+      "yield_unit": "PKT",
+      "dimension": "300G X 1PKT",
+      "ingredients": [
+        {
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
+          "group": "FOOD",
+          "qty": 3,
+          "unit": "KG",
+          "per_unit": 0.0333,
+          "grams_per_unit": 33.333
+        },
+        {
+          "name": "LADY'S CHOICE MAYO MAGIC (3L X 4TUB X 1CTN)",
+          "code": "CKRM00043",
+          "group": "FOOD",
+          "qty": 6,
+          "unit": "TUB",
+          "per_unit": 0.0667,
+          "grams_per_unit": null
+        },
+        {
+          "name": "MARIGOLD UHT FULL CREAM MILK",
+          "code": "USRW00098",
+          "group": "BEVERAGE",
+          "qty": 6,
+          "unit": "PKT",
+          "per_unit": 0.0667,
+          "grams_per_unit": null
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 90,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "FRIED GARLIC 1KG",
+          "code": "CKRM00029",
+          "group": "FOOD",
+          "qty": 4.5,
+          "unit": "KG",
+          "per_unit": 0.05,
+          "grams_per_unit": 50.0
+        }
+      ]
+    },
+    {
+      "code": "RCP-00028",
+      "name": "MY US SALTED EGG SAUCE DRESSING (300GM)",
+      "category": "SAUCES",
+      "yield_qty": 90,
+      "yield_unit": "PKT",
+      "dimension": "300G X 1PKT",
+      "ingredients": [
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 90,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "CARNATION EVAPORATED MILK (390GM X 48PCS X 1CTN)",
+          "code": "CKRM00017",
+          "group": "FOOD",
+          "qty": 60,
+          "unit": "TIN",
+          "per_unit": 0.6667,
+          "grams_per_unit": null
+        },
+        {
+          "name": "CURRY LEAF (PER KG)",
+          "code": "CKRM00023",
+          "group": "FOOD",
+          "qty": 0.22,
+          "unit": "KG",
+          "per_unit": 0.0024,
+          "grams_per_unit": 2.444
+        },
+        {
+          "name": "KNORR CHICKEN STOCK (1KG X 8PKT X 1CTN)",
+          "code": "USRW00076",
+          "group": "FOOD",
+          "qty": 0.42,
+          "unit": "KG",
+          "per_unit": 0.0047,
+          "grams_per_unit": 4.667
+        },
+        {
+          "name": "ANCHOR SALTED BUTTER 25KG",
+          "code": "CKRM00005",
+          "group": "FOOD",
+          "qty": 5,
+          "unit": "KG",
+          "per_unit": 0.0556,
+          "grams_per_unit": 55.556
+        },
+        {
+          "name": "KNORR GOLDEN SALTED EGG POWDER (800GM X 6PKT X 1CTN)",
+          "code": "CKRM00037",
+          "group": "FOOD",
+          "qty": 4.8,
+          "unit": "KG",
+          "per_unit": 0.0533,
+          "grams_per_unit": 53.333
+        },
+        {
+          "name": "CHILI PADI GREEN (PER KG)",
+          "code": "CKRM00021",
+          "group": "FOOD",
+          "qty": 0.6,
+          "unit": "KG",
+          "per_unit": 0.0067,
+          "grams_per_unit": 6.667
+        },
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 0.3,
+          "unit": "KG",
+          "per_unit": 0.0033,
+          "grams_per_unit": 3.333
+        }
+      ]
+    },
+    {
+      "code": "RCP-00029",
+      "name": "MY US TERIYAKI SAUCE (300GM)",
+      "category": "SAUCES",
+      "yield_qty": 44,
+      "yield_unit": "PKT",
+      "dimension": "300G X 1PKT",
+      "ingredients": [
+        {
+          "name": "MY US DUNCAN SAUCE SFG",
+          "code": "CKSFG0003",
+          "group": "FOOD",
+          "qty": 3,
+          "unit": "PKT",
+          "per_unit": 0.0682,
+          "grams_per_unit": null
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 44,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        },
+        {
+          "name": "Water",
+          "code": "",
+          "group": "",
+          "qty": 5.2,
+          "unit": "LTR",
+          "per_unit": 0.1182,
+          "grams_per_unit": 118.182
+        },
+        {
+          "name": "TEPUNG UBI KAYU 3A (20KG X PKT)",
+          "code": "CKRM00076",
+          "group": "FOOD",
+          "qty": 0.1,
+          "unit": "KG",
+          "per_unit": 0.0023,
+          "grams_per_unit": 2.273
+        },
+        {
+          "name": "OTAFUKU TERIYAKI SAUCE (2.4KG X 6BTL X 1CTN)",
+          "code": "CKRM00062",
+          "group": "FOOD",
+          "qty": 5.1,
+          "unit": "KG",
+          "per_unit": 0.1159,
+          "grams_per_unit": 115.909
+        },
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 0.3,
+          "unit": "KG",
+          "per_unit": 0.0068,
+          "grams_per_unit": 6.818
+        }
+      ]
+    },
+    {
+      "code": "RCP-00030",
+      "name": "MY US TOMYAM PASTE (300GM)",
+      "category": "SAUCES",
+      "yield_qty": 140,
+      "yield_unit": "PKT",
+      "dimension": "300G X 1PKT",
+      "ingredients": [
+        {
+          "name": "RED ONION (PER KG)",
+          "code": "USRW00145",
+          "group": "FOOD",
+          "qty": 4,
+          "unit": "KG",
+          "per_unit": 0.0286,
+          "grams_per_unit": 28.571
+        },
+        {
+          "name": "LEMONGRASS (PER KG)",
+          "code": "CKRM00046",
+          "group": "FOOD",
+          "qty": 1,
+          "unit": "KG",
+          "per_unit": 0.0071,
+          "grams_per_unit": 7.143
+        },
+        {
+          "name": "DAUN LIMAU / LIME (PER KG)",
+          "code": "CKRM00025",
+          "group": "FOOD",
+          "qty": 0.2,
+          "unit": "KG",
+          "per_unit": 0.0014,
+          "grams_per_unit": 1.429
+        },
+        {
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
+          "group": "FOOD",
+          "qty": 1.2,
+          "unit": "KG",
+          "per_unit": 0.0086,
+          "grams_per_unit": 8.571
+        },
+        {
+          "name": "GARLIC PEELED (PER KG)",
+          "code": "CKRM00030",
+          "group": "FOOD",
+          "qty": 1.2,
+          "unit": "KG",
+          "per_unit": 0.0086,
+          "grams_per_unit": 8.571
+        },
+        {
+          "name": "THAI LIME JUICE (1L X 12PCS X 1CTN)",
+          "code": "CKRM00077",
+          "group": "FOOD",
+          "qty": 2.6,
+          "unit": "KG",
+          "per_unit": 0.0186,
+          "grams_per_unit": 18.571
+        },
+        {
+          "name": "CHILI PADI GREEN (PER KG)",
+          "code": "CKRM00021",
+          "group": "FOOD",
+          "qty": 4,
+          "unit": "KG",
+          "per_unit": 0.0286,
+          "grams_per_unit": 28.571
+        },
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 0.2,
+          "unit": "KG",
+          "per_unit": 0.0014,
+          "grams_per_unit": 1.429
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 8,
+          "unit": "LTR",
+          "per_unit": 0.0571,
+          "grams_per_unit": 57.143
+        },
+        {
+          "name": "TOMYAM PASTE THAI LADY (3KG X 6PCS X 1CTN)",
+          "code": "CKRM00078",
+          "group": "FOOD",
+          "qty": 4,
+          "unit": "TIN",
+          "per_unit": 0.0286,
+          "grams_per_unit": null
+        },
+        {
+          "name": "PALMDALE TOMATO PUREE (3KG X 6TIN X 1CTN)",
+          "code": "CKRM00065",
+          "group": "FOOD",
+          "qty": 4,
+          "unit": "TIN",
+          "per_unit": 0.0286,
+          "grams_per_unit": null
+        },
+        {
+          "name": "BUNGA KANTAN",
+          "code": "CKRM00016",
+          "group": "FOOD",
+          "qty": 20,
+          "unit": "PCS",
+          "per_unit": 0.1429,
+          "grams_per_unit": null
+        },
+        {
+          "name": "NYLON BAG 6X9 INCH (100PCS X PKT)",
+          "code": "CKRM00060",
+          "group": "PACKAGING",
+          "qty": 140,
+          "unit": "PCS",
+          "per_unit": 1.0,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00031",
       "name": "MY US ITALIANO SAUCE 3KG",
+      "category": "SAUCES",
       "yield_qty": 6.5,
       "yield_unit": "PKT",
       "dimension": "3 KG X 1 PKT",
       "ingredients": [
         {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 15.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 2.308,
+          "name": "ANCHOR EXTRA YIELD COOKING CREAM (1L X 12PKT X 1CTN)",
+          "code": "CKRM00004",
+          "group": "FOOD",
+          "qty": 3,
+          "unit": "LTR",
+          "per_unit": 0.4615,
+          "grams_per_unit": 461.538
+        },
+        {
+          "name": "NYLON 12X18 (200PCS X PKT)",
+          "code": "CKRM00058",
+          "group": "PACKAGING",
+          "qty": 7,
+          "unit": "PCS",
+          "per_unit": 1.0769,
           "grams_per_unit": null
         },
         {
-          "name": "Anchor Extra Yield Cooking Cream (1L X 12Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 3.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.462,
-          "grams_per_unit": null
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 15,
+          "unit": "LTR",
+          "per_unit": 2.3077,
+          "grams_per_unit": 2307.692
         },
         {
-          "name": "Knorr Sauce Mix Carbonara (Ps) (750Gm X 6Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 3.0,
-          "unit": "KG",
-          "grams": 3000.0,
-          "per_unit": 0.462,
-          "grams_per_unit": 461.54
-        },
-        {
-          "name": "Tepung Ubi Kayu 3A (20Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.12,
-          "unit": "KG",
-          "grams": 120.0,
-          "per_unit": 0.018,
-          "grams_per_unit": 18.46
-        },
-        {
-          "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
+          "name": "KNORR CHICKEN STOCK (1KG X 8PKT X 1CTN)",
+          "code": "USRW00076",
           "group": "FOOD",
           "qty": 0.15,
           "unit": "KG",
-          "grams": 150.0,
-          "per_unit": 0.023,
-          "grams_per_unit": 23.08
+          "per_unit": 0.0231,
+          "grams_per_unit": 23.077
+        },
+        {
+          "name": "KNORR SAUCE MIX CARBONARA (PS) (750GM X 6PKT X 1CTN)",
+          "code": "CKRM00039",
+          "group": "FOOD",
+          "qty": 3,
+          "unit": "KG",
+          "per_unit": 0.4615,
+          "grams_per_unit": 461.538
+        },
+        {
+          "name": "TEPUNG UBI KAYU 3A (20KG X PKT)",
+          "code": "CKRM00076",
+          "group": "FOOD",
+          "qty": 0.12,
+          "unit": "KG",
+          "per_unit": 0.0185,
+          "grams_per_unit": 18.462
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
-      "name": "MY US SALTED EGG GARLIC PASTE (BASE) (300GM)",
-      "yield_qty": 90.0,
+      "code": "RCP-00032",
+      "name": "MY US BOLOGNESE SAUCE 3KG",
+      "category": "SAUCES",
+      "yield_qty": 16.5,
       "yield_unit": "PKT",
-      "dimension": "300G X 1PKT",
+      "dimension": "3 KG X 1 PKT",
       "ingredients": [
         {
-          "name": "Marigold Uht Full Cream Milk",
-          "group": "BEVERAGE",
-          "qty": 6.0,
-          "unit": "PKT",
-          "grams": null,
-          "per_unit": 0.067,
-          "grams_per_unit": null
+          "name": "KNORR CHICKEN STOCK (1KG X 8PKT X 1CTN)",
+          "code": "USRW00076",
+          "group": "FOOD",
+          "qty": 1.7,
+          "unit": "KG",
+          "per_unit": 0.103,
+          "grams_per_unit": 103.03
         },
         {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
+          "name": "PALMDALE TOMATO PUREE (3KG X 6TIN X 1CTN)",
+          "code": "CKRM00065",
           "group": "FOOD",
-          "qty": 3.0,
+          "qty": 18,
           "unit": "KG",
-          "grams": 3000.0,
-          "per_unit": 0.033,
-          "grams_per_unit": 33.33
+          "per_unit": 1.0909,
+          "grams_per_unit": 1090.909
         },
         {
-          "name": "Fried Garlic 1Kg",
+          "name": "CELERY (PER KG)",
+          "code": "CKRM00020",
           "group": "FOOD",
-          "qty": 4.5,
+          "qty": 2,
           "unit": "KG",
-          "grams": 4500.0,
-          "per_unit": 0.05,
-          "grams_per_unit": 50.0
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MY US SALTED EGG SAUCE DRESSING (300GM)",
-      "yield_qty": 90.0,
-      "yield_unit": "PKT",
-      "dimension": "300G X 1PKT",
-      "ingredients": [
-        {
-          "name": "Anchor Salted Butter 25Kg",
-          "group": "FOOD",
-          "qty": 5.0,
-          "unit": "KG",
-          "grams": 5000.0,
-          "per_unit": 0.056,
-          "grams_per_unit": 55.56
+          "per_unit": 0.1212,
+          "grams_per_unit": 121.212
         },
         {
-          "name": "Chili Padi Green (Per Kg)",
+          "name": "CARROT (PER KG)",
+          "code": "CKRM00018",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.1212,
+          "grams_per_unit": 121.212
+        },
+        {
+          "name": "YELLOW ONION",
+          "code": "USRW00189",
+          "group": "FOOD",
+          "qty": 5,
+          "unit": "KG",
+          "per_unit": 0.303,
+          "grams_per_unit": 303.03
+        },
+        {
+          "name": "ANCHOR SALTED BUTTER 25KG",
+          "code": "CKRM00005",
+          "group": "FOOD",
+          "qty": 2.5,
+          "unit": "KG",
+          "per_unit": 0.1515,
+          "grams_per_unit": 151.515
+        },
+        {
+          "name": "MIXED HERBS WHOLE (1KG X PKT)",
+          "code": "USRW00104",
+          "group": "FOOD",
+          "qty": 0.12,
+          "unit": "KG",
+          "per_unit": 0.0073,
+          "grams_per_unit": 7.273
+        },
+        {
+          "name": "MINCED CHICKEN (PER KG)",
+          "code": "CKRM00052",
+          "group": "FOOD",
+          "qty": 24,
+          "unit": "KG",
+          "per_unit": 1.4545,
+          "grams_per_unit": 1454.545
+        },
+        {
+          "name": "GARLIC PEELED (PER KG)",
+          "code": "CKRM00030",
           "group": "FOOD",
           "qty": 0.6,
           "unit": "KG",
-          "grams": 600.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 6.67
+          "per_unit": 0.0364,
+          "grams_per_unit": 36.364
         },
         {
-          "name": "Curry Leaf (Per Kg)",
+          "name": "BAY LEAVE WHOLE (500GM X PKT)",
+          "code": "CKRM00013",
           "group": "FOOD",
-          "qty": 0.22,
+          "qty": 0.02,
           "unit": "KG",
-          "grams": 220.0,
-          "per_unit": 0.002,
-          "grams_per_unit": 2.44
+          "per_unit": 0.0012,
+          "grams_per_unit": 1.212
         },
         {
-          "name": "Knorr Golden Salted Egg Powder (800Gm X 6Pkt X 1Ctn)",
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 10,
+          "unit": "LTR",
+          "per_unit": 0.6061,
+          "grams_per_unit": 606.061
+        },
+        {
+          "name": "BLACK PEPPER COARSE (1KG X PKT)",
+          "code": "USRW00022",
           "group": "FOOD",
-          "qty": 4.8,
+          "qty": 0.12,
           "unit": "KG",
-          "grams": 4800.0,
-          "per_unit": 0.053,
-          "grams_per_unit": 53.33
+          "per_unit": 0.0073,
+          "grams_per_unit": 7.273
         },
         {
-          "name": "P1 Sugar (50Kg X Guni)",
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
           "group": "FOOD",
-          "qty": 0.3,
+          "qty": 0.5,
           "unit": "KG",
-          "grams": 300.0,
-          "per_unit": 0.003,
-          "grams_per_unit": 3.33
+          "per_unit": 0.0303,
+          "grams_per_unit": 30.303
         },
         {
-          "name": "Knorr Chicken Stock (1Kg X 8Pkt X 1Ctn)",
+          "name": "HOSEN MUSHROOM SLICED (2.84KG X 6TIN X 1CTN)",
+          "code": "USRW00067",
           "group": "FOOD",
-          "qty": 0.42,
+          "qty": 2.84,
           "unit": "KG",
-          "grams": 420.0,
-          "per_unit": 0.005,
-          "grams_per_unit": 4.67
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MY US TERIYAKI SAUCE (300GM)",
-      "yield_qty": 44.0,
-      "yield_unit": "PKT",
-      "dimension": "300G X 1PKT",
-      "ingredients": [
-        {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 5.2,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.118,
-          "grams_per_unit": null
+          "per_unit": 0.1721,
+          "grams_per_unit": 172.121
         },
         {
-          "name": "Otafuku Teriyaki Sauce (2.4Kg X 6Btl X 1Ctn)",
-          "group": "FOOD",
-          "qty": 5.1,
-          "unit": "KG",
-          "grams": 5100.0,
-          "per_unit": 0.116,
-          "grams_per_unit": 115.91
-        },
-        {
-          "name": "P1 Sugar (50Kg X Guni)",
-          "group": "FOOD",
-          "qty": 0.3,
-          "unit": "KG",
-          "grams": 300.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 6.82
-        },
-        {
-          "name": "Tepung Ubi Kayu 3A (20Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 0.1,
-          "unit": "KG",
-          "grams": 100.0,
-          "per_unit": 0.002,
-          "grams_per_unit": 2.27
-        },
-        {
-          "name": "My Us Duncan Sauce Sfg",
-          "group": "FOOD",
-          "qty": 3.0,
-          "unit": "PKT",
-          "grams": null,
-          "per_unit": 0.068,
-          "grams_per_unit": null
-        }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MY US TOMYAM PASTE (300GM)",
-      "yield_qty": 140.0,
-      "yield_unit": "PKT",
-      "dimension": "300G X 1PKT",
-      "ingredients": [
-        {
-          "name": "Water",
-          "group": "WATER",
-          "qty": 8.0,
-          "unit": "L",
-          "grams": null,
-          "per_unit": 0.057,
-          "grams_per_unit": null
-        },
-        {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
-          "group": "FOOD",
-          "qty": 1.2,
-          "unit": "KG",
-          "grams": 1200.0,
-          "per_unit": 0.009,
-          "grams_per_unit": 8.57
-        },
-        {
-          "name": "Bunga Kantan",
-          "group": "FOOD",
-          "qty": 20.0,
+          "name": "NYLON 12X18 (200PCS X PKT)",
+          "code": "CKRM00058",
+          "group": "PACKAGING",
+          "qty": 17,
           "unit": "PCS",
-          "grams": null,
-          "per_unit": 0.143,
+          "per_unit": 1.0303,
+          "grams_per_unit": null
+        }
+      ]
+    },
+    {
+      "code": "RCP-00033",
+      "name": "MY US DUNCAN SAUCE SFG",
+      "category": "SAUCES",
+      "yield_qty": 16,
+      "yield_unit": "PKT",
+      "dimension": "1 KG X 1 PKT",
+      "ingredients": [
+        {
+          "name": "PALMDALE TOMATO PASTE (3KG X 6TIN X 1CTN)",
+          "code": "CKRM00064",
+          "group": "FOOD",
+          "qty": 3,
+          "unit": "TIN",
+          "per_unit": 0.1875,
           "grams_per_unit": null
         },
         {
-          "name": "Chili Padi Green (Per Kg)",
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
           "group": "FOOD",
-          "qty": 4.0,
+          "qty": 0.225,
           "unit": "KG",
-          "grams": 4000.0,
-          "per_unit": 0.029,
-          "grams_per_unit": 28.57
+          "per_unit": 0.0141,
+          "grams_per_unit": 14.062
         },
         {
-          "name": "Daun Limau / Lime (Per Kg)",
-          "group": "FOOD",
-          "qty": 0.2,
-          "unit": "KG",
-          "grams": 200.0,
-          "per_unit": 0.001,
-          "grams_per_unit": 1.43
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 7.5,
+          "unit": "LTR",
+          "per_unit": 0.4688,
+          "grams_per_unit": 468.75
         },
         {
-          "name": "Garlic Peeled (Per Kg)",
-          "group": "FOOD",
-          "qty": 1.2,
-          "unit": "KG",
-          "grams": 1200.0,
-          "per_unit": 0.009,
-          "grams_per_unit": 8.57
+          "name": "PET FOIL LL (PLAIN ROLL) 420MM X 500MM X 0.08MM",
+          "code": "CKRM00068",
+          "group": "PACKAGING",
+          "qty": 0.01,
+          "unit": "ROLL",
+          "per_unit": 0.0006,
+          "grams_per_unit": null
         },
         {
-          "name": "Lemongrass (Per Kg)",
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
           "group": "FOOD",
-          "qty": 1.0,
+          "qty": 0.04,
           "unit": "KG",
-          "grams": 1000.0,
-          "per_unit": 0.007,
-          "grams_per_unit": 7.14
+          "per_unit": 0.0025,
+          "grams_per_unit": 2.5
         },
         {
-          "name": "P1 Sugar (50Kg X Guni)",
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
           "group": "FOOD",
-          "qty": 0.2,
+          "qty": 0.75,
           "unit": "KG",
-          "grams": 200.0,
-          "per_unit": 0.001,
-          "grams_per_unit": 1.43
+          "per_unit": 0.0469,
+          "grams_per_unit": 46.875
         },
         {
-          "name": "Thai Lime Juice (1L X 12Pcs X 1Ctn)",
+          "name": "MIXED HERBS WHOLE (1KG X PKT)",
+          "code": "USRW00104",
           "group": "FOOD",
-          "qty": 2.6,
+          "qty": 0.06,
           "unit": "KG",
-          "grams": 2600.0,
-          "per_unit": 0.019,
-          "grams_per_unit": 18.57
-        },
-        {
-          "name": "Red Onion (Per Kg)",
-          "group": "FOOD",
-          "qty": 4.0,
-          "unit": "KG",
-          "grams": 4000.0,
-          "per_unit": 0.029,
-          "grams_per_unit": 28.57
+          "per_unit": 0.0037,
+          "grams_per_unit": 3.75
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
-      "name": "PICKLE JAM",
-      "yield_qty": 1.0,
+      "code": "RCP-00034",
+      "name": "MY US CONCASSE SAUCE 3KG",
+      "category": "SAUCES",
+      "yield_qty": 16.5,
       "yield_unit": "PKT",
-      "dimension": "500G X 1 PKT",
+      "dimension": "3 KG X 1 PKT",
       "ingredients": [
         {
-          "name": "Hosen Select Gherkins 12/680Gm",
+          "name": "MIXED HERBS WHOLE (1KG X PKT)",
+          "code": "USRW00104",
           "group": "FOOD",
-          "qty": 400.0,
-          "unit": "GM",
-          "grams": 400.0,
-          "per_unit": 400.0,
-          "grams_per_unit": 400.0
+          "qty": 0.07,
+          "unit": "KG",
+          "per_unit": 0.0042,
+          "grams_per_unit": 4.242
         },
         {
-          "name": "Hosen Pure Honey (1Kg X 12Tub X 1Ctn)",
+          "name": "GARLIC PEELED (PER KG)",
+          "code": "CKRM00030",
           "group": "FOOD",
-          "qty": 100.0,
-          "unit": "GM",
-          "grams": 100.0,
-          "per_unit": 100.0,
-          "grams_per_unit": 100.0
+          "qty": 0.6,
+          "unit": "KG",
+          "per_unit": 0.0364,
+          "grams_per_unit": 36.364
+        },
+        {
+          "name": "KNORR CHICKEN STOCK (1KG X 8PKT X 1CTN)",
+          "code": "USRW00076",
+          "group": "FOOD",
+          "qty": 1.3,
+          "unit": "KG",
+          "per_unit": 0.0788,
+          "grams_per_unit": 78.788
+        },
+        {
+          "name": "P1 SUGAR (50KG X GUNI)",
+          "code": "CKRM00063",
+          "group": "FOOD",
+          "qty": 1,
+          "unit": "KG",
+          "per_unit": 0.0606,
+          "grams_per_unit": 60.606
+        },
+        {
+          "name": "CELERY (PER KG)",
+          "code": "CKRM00020",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.1212,
+          "grams_per_unit": 121.212
+        },
+        {
+          "name": "PALMDALE TOMATO PUREE (3KG X 6TIN X 1CTN)",
+          "code": "CKRM00065",
+          "group": "FOOD",
+          "qty": 18,
+          "unit": "KG",
+          "per_unit": 1.0909,
+          "grams_per_unit": 1090.909
+        },
+        {
+          "name": "BAY LEAVE WHOLE (500GM X PKT)",
+          "code": "CKRM00013",
+          "group": "FOOD",
+          "qty": 0.06,
+          "unit": "KG",
+          "per_unit": 0.0036,
+          "grams_per_unit": 3.636
+        },
+        {
+          "name": "CARROT (PER KG)",
+          "code": "CKRM00018",
+          "group": "FOOD",
+          "qty": 2,
+          "unit": "KG",
+          "per_unit": 0.1212,
+          "grams_per_unit": 121.212
+        },
+        {
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
+          "group": "FOOD",
+          "qty": 4,
+          "unit": "KG",
+          "per_unit": 0.2424,
+          "grams_per_unit": 242.424
+        },
+        {
+          "name": "YELLOW ONION",
+          "code": "USRW00189",
+          "group": "FOOD",
+          "qty": 16,
+          "unit": "KG",
+          "per_unit": 0.9697,
+          "grams_per_unit": 969.697
+        },
+        {
+          "name": "BLACK PEPPER COARSE (1KG X PKT)",
+          "code": "USRW00022",
+          "group": "FOOD",
+          "qty": 0.16,
+          "unit": "KG",
+          "per_unit": 0.0097,
+          "grams_per_unit": 9.697
+        },
+        {
+          "name": "water",
+          "code": "",
+          "group": "",
+          "qty": 14,
+          "unit": "LTR",
+          "per_unit": 0.8485,
+          "grams_per_unit": 848.485
+        },
+        {
+          "name": "NYLON 12X18 (200PCS X PKT)",
+          "code": "CKRM00058",
+          "group": "PACKAGING",
+          "qty": 17,
+          "unit": "PCS",
+          "per_unit": 1.0303,
+          "grams_per_unit": null
         }
-      ],
-      "category": "SAUCES"
+      ]
     },
     {
+      "code": "RCP-00035",
       "name": "SAMBAL GEPUK",
+      "category": "SAUCES",
       "yield_qty": 2.5,
       "yield_unit": "PKT",
       "dimension": "500G X 1 PKT",
       "ingredients": [
         {
-          "name": "17Kg Vesawit Cooking Oil (Pet)",
+          "name": "SESAME OIL  CAP RUSA RED CAP",
+          "code": "USRW00384",
           "group": "FOOD",
-          "qty": 550.0,
-          "unit": "GM",
-          "grams": 550.0,
-          "per_unit": 220.0,
-          "grams_per_unit": 220.0
+          "qty": 30,
+          "unit": "ML",
+          "per_unit": 12.0,
+          "grams_per_unit": 12.0
         },
         {
-          "name": "40Kg Australian Fine Salt",
+          "name": "AJI NO MOTO",
+          "code": "USRW00385",
           "group": "FOOD",
-          "qty": 20.0,
+          "qty": 20,
           "unit": "GM",
-          "grams": 20.0,
           "per_unit": 8.0,
           "grams_per_unit": 8.0
         },
         {
-          "name": "Garlic Peeled (Per Kg)",
+          "name": "GARLIC PEELED (PER KG)",
+          "code": "CKRM00030",
           "group": "FOOD",
-          "qty": 15.0,
+          "qty": 15,
           "unit": "GM",
-          "grams": 15.0,
           "per_unit": 6.0,
           "grams_per_unit": 6.0
         },
         {
-          "name": "Chili Padi Merah Without Tangkai",
+          "name": "KACANG GAJUS",
+          "code": "USRW00383",
           "group": "FOOD",
-          "qty": 500.0,
+          "qty": 125,
           "unit": "GM",
-          "grams": 500.0,
-          "per_unit": 200.0,
-          "grams_per_unit": 200.0
-        },
-        {
-          "name": "Kacang Gajus",
-          "group": "FOOD",
-          "qty": 125.0,
-          "unit": "GM",
-          "grams": 125.0,
           "per_unit": 50.0,
           "grams_per_unit": 50.0
         },
         {
-          "name": "Sesame Oil Cap Rusa Red Cap",
+          "name": "17KG VESAWIT COOKING OIL (PET) ",
+          "code": "CKRM00001",
           "group": "FOOD",
-          "qty": 30.0,
-          "unit": "ML",
-          "grams": null,
-          "per_unit": 12.0,
-          "grams_per_unit": null
+          "qty": 550,
+          "unit": "GM",
+          "per_unit": 220.0,
+          "grams_per_unit": 220.0
         },
         {
-          "name": "Aji No Moto",
+          "name": "CHILI PADI MERAH WITHOUT TANGKAI",
+          "code": "USRW00382",
           "group": "FOOD",
-          "qty": 20.0,
+          "qty": 500,
           "unit": "GM",
-          "grams": 20.0,
+          "per_unit": 200.0,
+          "grams_per_unit": 200.0
+        },
+        {
+          "name": "40KG AUSTRALIAN FINE SALT",
+          "code": "CKRM00002",
+          "group": "FOOD",
+          "qty": 20,
+          "unit": "GM",
           "per_unit": 8.0,
           "grams_per_unit": 8.0
         }
-      ],
-      "category": "SAUCES"
-    },
-    {
-      "name": "MY US LASAGNA (2 PCS)",
-      "yield_qty": 10.0,
-      "yield_unit": "PKT",
-      "dimension": "2 PIECES X 1 PACKET",
-      "ingredients": [
-        {
-          "name": "San Remo No. 100 Large Sheet Lasagna (250Gm X 12Pkt X Ctn)",
-          "group": "FOOD",
-          "qty": 2.2,
-          "unit": "PKT",
-          "grams": null,
-          "per_unit": 0.22,
-          "grams_per_unit": null
-        },
-        {
-          "name": "My Us Italiano Sauce 3Kg",
-          "group": "FOOD",
-          "qty": 0.333,
-          "unit": "PKT",
-          "grams": null,
-          "per_unit": 0.033,
-          "grams_per_unit": null
-        },
-        {
-          "name": "My Us Bolognese Sauce 3Kg",
-          "group": "FOOD",
-          "qty": 0.666,
-          "unit": "PKT",
-          "grams": null,
-          "per_unit": 0.067,
-          "grams_per_unit": null
-        },
-        {
-          "name": "My Us Concasse Sauce 3Kg",
-          "group": "FOOD",
-          "qty": 0.333,
-          "unit": "PKT",
-          "grams": null,
-          "per_unit": 0.033,
-          "grams_per_unit": null
-        },
-        {
-          "name": "Anchor Mozarella Cheese (2Kg X 6Pkt X 1Ctn)",
-          "group": "FOOD",
-          "qty": 0.5,
-          "unit": "KG",
-          "grams": 500.0,
-          "per_unit": 0.05,
-          "grams_per_unit": 50.0
-        },
-        {
-          "name": "Mixed Herbs Whole (1Kg X Pkt)",
-          "group": "FOOD",
-          "qty": 4.5,
-          "unit": "GM",
-          "grams": 4.5,
-          "per_unit": 0.45,
-          "grams_per_unit": 0.45
-        }
-      ],
-      "category": "SIDE DISHES"
+      ]
     }
   ]
 };
