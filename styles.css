@@ -53,7 +53,7 @@
   .chip { font-size:12px; padding:6px 11px; border:1px solid var(--glass-border); border-radius:20px; background:rgba(255,255,255,0.5); color:var(--text-soft); cursor:pointer; }
   .chip.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
 
-  .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  .metrics { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px; }
   .metric { background:var(--glass); backdrop-filter:blur(38px) saturate(1.7); -webkit-backdrop-filter:blur(38px) saturate(1.7);
     border:1px solid var(--glass-border); border-radius:var(--radius); padding:14px 16px;
     box-shadow:var(--glow), inset 0 1px 1px rgba(255,255,255,0.9); }

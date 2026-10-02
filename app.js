@@ -301,11 +301,16 @@ function render() {
     : d.metrics.alerts;
   // PKT dispatched (MY): units shipped from PKT warehouse to MY outlets
   const pktDispMY = (window.PKT_SUMMARY && window.PKT_SUMMARY.MY) ? Number(window.PKT_SUMMARY.MY.totalOut).toLocaleString() : "—";
-  // Products tracked: from HOD if live, else sample
-  const outletCount = liveProd ? liveProd.length : d.metrics.outlets;
+  // Products made: distinct products produced (from HOD job production), else sample
+  const productCount = liveProd ? liveProd.length : d.metrics.outlets;
+  // Outlets: distinct outlets that ordered, from the Sales Order demand data (— if none loaded)
+  let outletCount = "—";
+  try{ const dv = (typeof demandView==="function") ? demandView() : null;
+       if(dv && dv.byOutlet && dv.byOutlet.length) outletCount = dv.byOutlet.length; }catch(e){}
 
   document.getElementById("metrics").innerHTML = `
-    <div class="metric"><p class="metric-label">Outlets tracked</p><p class="metric-val">${outletCount}</p></div>
+    <div class="metric"><p class="metric-label">Outlets</p><p class="metric-val">${outletCount}</p></div>
+    <div class="metric"><p class="metric-label">Products made</p><p class="metric-val">${productCount}</p></div>
     <div class="metric"><p class="metric-label">Avg waste</p><p class="metric-val">${avgWaste}</p></div>
     <div class="metric"><p class="metric-label">Variance alerts</p><p class="metric-val" style="color:var(--amber)">${varCount}</p></div>
     <div class="metric"><p class="metric-label">PKT dispatched (MY)</p><p class="metric-val">${pktDispMY}</p></div>`;
