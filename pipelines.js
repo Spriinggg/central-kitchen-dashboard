@@ -22,6 +22,11 @@
   }
   const numf = (v) => (v == null || v === "") ? 0 : (typeof v === "number" ? v : parseFloat(String(v).replace(/,/g, "")) || 0);
   const r1 = n => Math.round(n * 10) / 10;
+  // Stable dedup key for a movement row. Uses ONLY columns that survive slimRaw()
+  // (date, code, name, storage, qty-in, qty-out, remark/serial) so the same transaction
+  // keeps the same key before and after a Supabase round-trip — this prevents overlapping
+  // or re-uploaded files from being double-counted.
+  function mvKey(v){ return [String(v[0]||"").trim(), String(v[1]||"").trim().toUpperCase(), String(v[4]||"").trim(), numf(v[9]), numf(v[11]), String(v[14]||"").trim()].join("|"); }
   function numParse(s){ if(s==null)return{n:null,u:null}; if(typeof s==="number")return{n:s,u:null}; const m=/([\d,\.]+)\s*([A-Za-z]+)?/.exec(String(s).trim()); return m?{n:parseFloat(m[1].replace(/,/g,"")),u:m[2]||null}:{n:null,u:null}; }
   function iso(d){ return d?d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"):null; }
   function dateOf(title){ const m=/as at (\d{2})\/(\d{2})\/(\d{4})/.exec(title||""); return m?new Date(+m[3],+m[2]-1,+m[1]):null; }
@@ -51,7 +56,7 @@
       const kind = detect(header, title);
       const body = rows.slice(hi + 1);
       if (kind === "raw_movement") {
-        body.forEach(v => { if (!v || typeof v[0] !== "string") return; const k=v.join("\u0001"); if(raw.mvKeys[k])return; raw.mvKeys[k]=1; raw.movements.push(v); });
+        body.forEach(v => { if (!v || typeof v[0] !== "string") return; const k=mvKey(v); if(raw.mvKeys[k])return; raw.mvKeys[k]=1; raw.movements.push(v); });
       } else if (kind === "balance") {
         const d = dateOf(title); const t = {};
         body.forEach(v => { if (v[0] && v[7] != null){ const k=v[7]+"\u0001"+v[0]; t[k]=numf(v[8]); const c=numf(v[10]); if(c) raw.costs[k]=c; } });
@@ -83,7 +88,7 @@
     if (!a) return b; if (!b) return a;
     const out = { mvKeys:{}, movements: [], openings:{}, closings:{}, openTitle:null, closeTitle:null, jobRows:[], jobKeys:{}, wasteRows:[], wasteKeys:{}, costs:{} };
     [a,b].forEach(src => {
-      (src.movements||[]).forEach(v=>{ const k=v.join("\u0001"); if(out.mvKeys[k])return; out.mvKeys[k]=1; out.movements.push(v); });
+      (src.movements||[]).forEach(v=>{ const k=mvKey(v); if(out.mvKeys[k])return; out.mvKeys[k]=1; out.movements.push(v); });
       (src.jobRows||[]).forEach(v=>{ const k=String(v[0]); if(out.jobKeys[k])return; out.jobKeys[k]=1; out.jobRows.push(v); });
       (src.wasteRows||[]).forEach(v=>{ const k=String(v[1]||v.join("\u0001")); if(out.wasteKeys[k])return; out.wasteKeys[k]=1; out.wasteRows.push(v); });
       Object.keys(src.costs||{}).forEach(k=>{ out.costs[k]=src.costs[k]; });
