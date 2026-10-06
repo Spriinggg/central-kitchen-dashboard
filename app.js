@@ -762,6 +762,154 @@ function jpcExportCSV(){ if(!JPCRAW||!JPCRAW.jobs||!JPCRAW.jobs.length){ alert("
   b.products.forEach(p=>p.rows.forEach(r=>rows.push([p.product,r.job,r.date,r.status,Math.round(r.out),r.cost.toFixed(2),r.cpu.toFixed(3),p.medianCPU.toFixed(3),Math.round(r.dev)+"%"])));
   downloadCSV("job_production_costing.csv",["Product","JobNo","Date","Status","Output","TotalCost_RM","CostPerUnit","MedianCostPerUnit","DeviationPct"],rows);
 }
+// ---- PVD (Production vs Demand) — did CK make enough to cover outlet orders? ----
+/* Compares what CK produced (Job Production yield) against what outlets ordered
+   (Sales Order demand) for each CK product, over the window where BOTH datasets
+   overlap (so the two sides are measured over the same dates). Demand is converted
+   into the production unit using the pack-size map below. Products whose unit we
+   can't yet convert are shown raw, flagged "pack-size needed". */
+const PVD_CONV = {
+  // dough: produced in PCS, ordered in CTN  (pcs per carton)
+  "myuspersonaldough":{u:"PCS",f:{CTN:200}},
+  "myusregulardough":{u:"PCS",f:{CTN:100}},
+  "myuslargedough":{u:"PCS",f:{CTN:45}},
+  // sauces/paste: produced in PKT, ordered in PKT (1:1) — fill in CTN/BOX factors here as they're confirmed
+  "myustomyumpaste":{u:"PKT",f:{PKT:1}},
+  "myussambalgepuk":{u:"PKT",f:{PKT:1}},
+  "myusmarshallsauce":{u:"PKT",f:{PKT:1}},
+  "myusspicysauce":{u:"PKT",f:{PKT:1}}
+};
+function pvdKey(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+// compact per-product daily demand for CK products — small enough to persist in Supabase
+function pvdBuildDaily(lines){
+  const daily={};
+  (lines||[]).forEach(l=>{ const dt=l.cdate||l.date; if(!dt || !/^my us/i.test(l.desc||"")) return;
+    const k=pvdKey(l.desc); const o=daily[k]||(daily[k]={name:l.desc,days:{}});
+    const dd=o.days[dt]||(o.days[dt]={}); dd[l.uom]=(dd[l.uom]||0)+l.qty; });
+  return daily;
+}
+// returns the demand daily map from whichever source is available this session
+function pvdDemandDaily(){
+  if(DEMRAW && DEMRAW.lines && DEMRAW.lines.length) return pvdBuildDaily(DEMRAW.lines);
+  if(DEMRAW && DEMRAW.agg && DEMRAW.agg.ckDaily) return DEMRAW.agg.ckDaily;
+  if(DEMRAW && DEMRAW.ckDaily) return DEMRAW.ckDaily;
+  return null;
+}
+function pvdCompute(){
+  if(!JPCRAW || !JPCRAW.jobs || !JPCRAW.jobs.length) return {err:"nojpc"};
+  const demDaily = pvdDemandDaily();
+  if(!demDaily || !Object.keys(demDaily).length) return {err:"nodem"};
+  const jd = JPCRAW.jobs.map(j=>j.date).filter(Boolean).sort();
+  const dd = []; const monthCount={};
+  Object.keys(demDaily).forEach(k=>Object.keys(demDaily[k].days).forEach(d=>{ dd.push(d); const ym=d.slice(0,7); monthCount[ym]=(monthCount[ym]||0)+1; }));
+  dd.sort();
+  if(!jd.length || !dd.length) return {err:"nodates"};
+  const prodSpan=[jd[0],jd[jd.length-1]], demSpan=[dd[0],dd[dd.length-1]];
+  // compare BY MONTH: pick the month with the most demand (e.g. September), then
+  // clamp the window to where production data actually ends, so both sides cover the same dates.
+  const targetYM = Object.keys(monthCount).sort((a,b)=>monthCount[b]-monthCount[a])[0];
+  const [ty,tm]=targetYM.split("-").map(Number);
+  const pad=n=>String(n).padStart(2,"0");
+  const monthStart = targetYM+"-01";
+  const lastDay = new Date(ty, tm, 0).getDate();
+  const monthEnd = targetYM+"-"+pad(lastDay);
+  const prodMax = prodSpan[1];
+  const winFrom = monthStart;
+  const winTo = (prodMax<monthEnd ? prodMax : monthEnd);
+  if(prodMax<monthStart || prodSpan[0]>monthEnd) return {err:"nooverlap",prodSpan,demSpan};
+  const monthLabel = new Date(ty,tm-1,1).toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const truncated = winTo<monthEnd;
+  // production within window
+  const prod={};
+  JPCRAW.jobs.forEach(j=>{ if(!j.date || j.date<winFrom || j.date>winTo) return;
+    const k=pvdKey(j.product); const o=prod[k]||(prod[k]={key:k,name:j.product,unit:(j.yield&&j.yield.unit)||"",qty:0,jobs:0});
+    o.qty += (j.yield&&j.yield.qty)||0; o.jobs++; });
+  // demand within window (CK products only), summed from the daily map
+  const dem={};
+  Object.keys(demDaily).forEach(k=>{ const src=demDaily[k]; const o=dem[k]||(dem[k]={key:k,name:src.name,uoms:{}});
+    Object.keys(src.days).forEach(date=>{ if(date<winFrom||date>winTo) return; const dd2=src.days[date];
+      Object.keys(dd2).forEach(u=>{ o.uoms[u]=(o.uoms[u]||0)+dd2[u]; }); }); });
+  const rows=[];
+  Object.keys(prod).forEach(k=>{
+    const p=prod[k], d=dem[k], conv=PVD_CONV[k];
+    let demRaw="", demConv=null, cover=null, status;
+    if(d){ demRaw=Object.keys(d.uoms).map(u=>Math.round(d.uoms[u])+" "+(u||"").toLowerCase()).join(", "); }
+    if(conv && d){
+      let tot=0, ok=true;
+      Object.keys(d.uoms).forEach(u=>{ const f=conv.f[u]; if(f==null){ ok=false; } else { tot+=d.uoms[u]*f; } });
+      if(ok && tot>0){ demConv=tot; cover=p.qty/tot*100; status = cover<80?"under":(cover>120?"over":"ok"); }
+      else { status="nopack"; }
+    } else if(!d){ status="nodemand"; }
+    else { status="nopack"; }
+    rows.push({name:p.name,key:k,prodQty:p.qty,prodUnit:p.unit,jobs:p.jobs,demRaw:demRaw,demConv:demConv,cover:cover,status:status});
+  });
+  const order={under:0,over:1,ok:2,nopack:3,nodemand:4};
+  rows.sort((a,b)=>(order[a.status]-order[b.status])||(b.prodQty-a.prodQty));
+  return {rows,winFrom,winTo,prodSpan,demSpan,truncated,monthLabel,monthEnd};
+}
+function renderPVD(){
+  const el=document.getElementById("pvdList"); if(!el) return;
+  const r=pvdCompute();
+  if(r.err){
+    const msg = r.err==="nojpc" ? "Upload the Job Production Material Costing report."
+      : r.err==="nodem" ? "Upload the Sales Order Listing (demand) export."
+      : r.err==="nooverlap" ? "Production and demand data don't share any dates — upload reports for the same month."
+      : "Not enough dated data to compare yet.";
+    el.innerHTML='<div class="src-badge">○ Needs both production and demand data. '+msg+'</div>';
+    return;
+  }
+  const q=((document.getElementById("pvdSearch")||{}).value||"").toLowerCase().trim();
+  let rows=r.rows; if(q) rows=rows.filter(x=>x.name.toLowerCase().indexOf(q)>=0);
+  const nf=n=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  const col={under:"var(--red)",over:"var(--amber)",ok:"var(--green)",nopack:"var(--text-mut)",nodemand:"var(--text-mut)"};
+  const lbl={under:"Under",over:"Over",ok:"On target",nopack:"Pack-size needed",nodemand:"No orders"};
+  const compared=r.rows.filter(x=>x.cover!=null);
+  const under=compared.filter(x=>x.status==="under").length, over=compared.filter(x=>x.status==="over").length;
+  let h='<div class="src-badge live">● production vs demand · '+r.monthLabel+' ('+r.winFrom+' → '+r.winTo+')</div>';
+  h+='<div style="font-size:11px;color:var(--text-mut);margin:2px 0 8px;">For each CK product: units produced vs units ordered by outlets, within the month, over the dates both reports cover. Demand converted to the production unit using pack-size. Coverage = produced as a % of demand (100% = exact match).</div>';
+  // window warning
+  if(r.truncated){
+    h+='<div style="background:#fff4e5;border:1px solid #f0c48a;color:#8a5a00;border-radius:8px;padding:8px 11px;margin:6px 0 10px;font-size:12px;line-height:1.5">'
+      +'⚠️ Production data for '+r.monthLabel+' only runs to <b>'+r.winTo+'</b> (month ends '+r.monthEnd+'). '
+      +'To keep both sides fair, demand is also measured only to <b>'+r.winTo+'</b>, so this is a partial-month view. '
+      +'Re-export the Job Production report for the full month for a complete picture.</div>';
+  }
+  h+='<div style="display:flex;gap:22px;flex-wrap:wrap;margin:0 0 12px;">';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Products compared</p><p style="font-size:21px;font-weight:700;margin:0">'+compared.length+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Under-produced</p><p style="font-size:21px;font-weight:700;margin:0;color:'+(under?"var(--red)":"var(--green)")+'">'+under+'</p></div>';
+  h+='<div><p style="font-size:11px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin:0">Over-produced</p><p style="font-size:21px;font-weight:700;margin:0;color:'+(over?"var(--amber)":"var(--green)")+'">'+over+'</p></div>';
+  h+='</div>';
+  if(q) h+='<div style="font-size:11px;color:var(--text-mut);margin:-4px 0 8px;">Filter: “'+q+'” · '+rows.length+' product(s)</div>';
+  if(!rows.length){ h+='<div class="empty">No match</div>'; el.innerHTML=h; return; }
+  // table
+  h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+  h+='<tr style="text-align:left;color:var(--text-mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em">'
+    +'<th style="padding:6px 8px 6px 0">Product</th><th style="padding:6px 8px;text-align:right">Produced</th>'
+    +'<th style="padding:6px 8px;text-align:right">Demand (ordered)</th><th style="padding:6px 8px;text-align:right">Demand (in prod. unit)</th>'
+    +'<th style="padding:6px 8px;text-align:right">Coverage</th><th style="padding:6px 0 6px 8px;text-align:right">Status</th></tr>';
+  rows.forEach(x=>{
+    const c=col[x.status]; const u=(x.prodUnit||"").toLowerCase();
+    h+='<tr style="border-top:1px solid var(--glass-border)">'
+      +'<td style="padding:7px 8px 7px 0">'+x.name+'</td>'
+      +'<td style="padding:7px 8px;text-align:right;font-weight:600">'+nf(x.prodQty)+' '+u+'<br><span style="font-size:10px;color:var(--text-mut);font-weight:400">'+x.jobs+' jobs</span></td>'
+      +'<td style="padding:7px 8px;text-align:right">'+(x.demRaw||"—")+'</td>'
+      +'<td style="padding:7px 8px;text-align:right">'+(x.demConv!=null?nf(x.demConv)+' '+u:"—")+'</td>'
+      +'<td style="padding:7px 8px;text-align:right;font-weight:700;color:'+c+'">'+(x.cover!=null?Math.round(x.cover)+"%":"—")+'</td>'
+      +'<td style="padding:7px 0 7px 8px;text-align:right"><span style="font-size:10.5px;color:'+c+';font-weight:600">'+lbl[x.status]+'</span></td>'
+      +'</tr>';
+  });
+  h+='</table></div>';
+  h+='<div style="font-size:10.5px;color:var(--text-mut);margin-top:8px;line-height:1.5">On target = 80–120% · Under = below 80% (may run short) · Over = above 120% (possible excess). '
+    +'Low-volume items made in big batches can read very high over a short window — a full month evens this out.</div>';
+  el.innerHTML=h;
+}
+function pvdExportCSV(){
+  const r=pvdCompute();
+  if(r.err){ alert("Need both production and demand data to export."); return; }
+  const rows=r.rows.map(x=>[x.name,Math.round(x.prodQty),(x.prodUnit||""),x.demRaw,(x.demConv!=null?Math.round(x.demConv):""),(x.cover!=null?Math.round(x.cover)+"%":""),x.status]);
+  downloadCSV("production_vs_demand.csv",["Product","Produced","ProdUnit","DemandOrdered","DemandInProdUnit","Coverage","Status"],rows);
+}
+
 // ---- PKT (USFOOD warehouse) — real WMS dispatches, MY/SG separate ----
 let PKTRAW=null, pktRegion="MY", pktLogPage=0; const PKT_LOG_PAGE=50;
 function pktLogPrev(){ if(pktLogPage>0){ pktLogPage--; renderPKT(); } }
@@ -995,11 +1143,13 @@ async function ckProcessUploaded(list){
       // merge with existing raw lines only if this session has them; a fresh session
       // loads a stored aggregate (no lines), so a new upload replaces it (full-range snapshot)
       DEMRAW = (DEMRAW && DEMRAW.lines) ? window.DEM.mergeRaw(DEMRAW, newD) : newD;
-      renderDemand();
+      renderDemand(); renderPVD();
       const db=window.DEM.build(DEMRAW);
       parts.push("Demand: "+db.lineCount+" lines · "+db.byOutlet.length+" outlets · RM "+Math.round(db.totalValue).toLocaleString()+" · "+db.dateFrom+"→"+db.dateTo);
       if(SB){
-        // store only the aggregated view (small) — raw 37k+ lines time out the DB write
+        // store only the aggregated view (small) — raw 37k+ lines time out the DB write.
+        // ckDaily = compact per-CK-product daily demand, so Production-vs-Demand survives a reload.
+        db.ckDaily = pvdBuildDaily(DEMRAW.lines);
         const demStore={ agg:db, __agg:true, __uploadedBy:CURRENT_USER||"", __uploadedAt:nowIso };
         noteUpload(demStore.__uploadedBy, demStore.__uploadedAt); renderDataInfo();
         const {error}=await SB.from("ck_state").upsert({id:"demand",payload:demStore,updated_at:nowIso});
@@ -1011,7 +1161,7 @@ async function ckProcessUploaded(list){
     if(jpcFiles.length){
       const newJ=window.JPC.parseFiles(jpcFiles);
       JPCRAW = JPCRAW ? window.JPC.mergeRaw(JPCRAW, newJ) : newJ;
-      renderJPC();
+      renderJPC(); renderPVD();
       const jb=window.JPC.build(JPCRAW);
       parts.push("Job Costing: "+jb.jobCount+" jobs · "+jb.productCount+" products · RM "+Math.round(jb.totalCost).toLocaleString()+" · "+jb.alerts.length+" flagged · "+jb.dateFrom+"→"+jb.dateTo);
       if(SB){
@@ -1052,6 +1202,8 @@ async function ckProcessUploaded(list){
   const de=document.getElementById("demExport"); if(de) de.addEventListener("click",demExportCSV);
   const js=document.getElementById("jpcSearch"); if(js) js.addEventListener("input",renderJPC);
   const je=document.getElementById("jpcExport"); if(je) je.addEventListener("click",jpcExportCSV);
+  const vs=document.getElementById("pvdSearch"); if(vs) vs.addEventListener("input",renderPVD);
+  const ve=document.getElementById("pvdExport"); if(ve) ve.addEventListener("click",pvdExportCSV);
 })();
 document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
 document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
@@ -1105,7 +1257,7 @@ async function loadDemandFromSupabase(){
     const {data,error}=await SB.from("ck_state").select("payload").eq("id","demand").maybeSingle();
     if(error) throw error;
     if(data && data.payload && (data.payload.agg || data.payload.lines)){
-      DEMRAW=data.payload; renderDemand();
+      DEMRAW=data.payload; renderDemand(); renderPVD();
       if(DEMRAW.__uploadedAt) noteUpload(DEMRAW.__uploadedBy||"", DEMRAW.__uploadedAt);
       renderDataInfo();
       return true;
@@ -1119,7 +1271,7 @@ async function loadJPCFromSupabase(){
     const {data,error}=await SB.from("ck_state").select("payload").eq("id","jobcost").maybeSingle();
     if(error) throw error;
     if(data && data.payload && data.payload.jobs){
-      JPCRAW=data.payload; renderJPC();
+      JPCRAW=data.payload; renderJPC(); renderPVD();
       if(JPCRAW.__uploadedAt) noteUpload(JPCRAW.__uploadedBy||"", JPCRAW.__uploadedAt);
       renderDataInfo();
       return true;
@@ -1137,6 +1289,7 @@ async function initApp(){
   const okd=await loadDemandFromSupabase();
   const okj=await loadJPCFromSupabase();
   renderJPC();  // show empty-state message if no job-costing data yet
+  renderPVD();  // production-vs-demand (shows its own empty state until both datasets exist)
   if(ok||okp||okd||okj){ setLoadState(""); }
   else { setLoadState("No data loaded yet — upload the ERP / PKT / Sales Order / Job Costing files below to populate the dashboard."); }
 }

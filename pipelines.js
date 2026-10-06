@@ -326,8 +326,9 @@
         rows.slice(hi+1).forEach(function(r){ if(!r)return; var so=clean(gi(r,"SALESORDERNO")); if(!so)return;
           var outlet=clean(gi(r,"CUSTOMERBRANCHNAME"))||clean(gi(r,"CUSTOMERNAME"));
           var cbc=clean(gi(r,"CUSTOMERBRANCHCODE"));
-          var date=dnorm(gi(r,"DELIVERYDATE"))||dnorm(gi(r,"CREATEDDATE"));
-          meta[so]={outlet:outlet,code:cbc,date:date,cust:clean(gi(r,"CUSTOMERNAME"))};
+          var cdate=dnorm(gi(r,"CREATEDDATE"));
+          var date=dnorm(gi(r,"DELIVERYDATE"))||cdate;
+          meta[so]={outlet:outlet,code:cbc,date:date,cdate:cdate||date,cust:clean(gi(r,"CUSTOMERNAME"))};
         });
       });
       sheets.forEach(function(sh){
@@ -338,7 +339,7 @@
           var gi=function(r,k){var i=C[k];return i==null?null:r[i];};
           rows.slice(hi+1).forEach(function(r){ if(!r)return; var so=clean(gi(r,"SALESORDERNO")); if(!so)return;
             var m=meta[so]||{}; if(sgCode(m.code)||sgOutlet(m.cust))return;
-            push({date:m.date||"",outlet:m.outlet||so,code:clean(gi(r,"ITEMCODE")),desc:clean(gi(r,"ITEMNAME")),
+            push({date:m.date||"",cdate:m.cdate||m.date||"",outlet:m.outlet||so,code:clean(gi(r,"ITEMCODE")),desc:clean(gi(r,"ITEMNAME")),
                   qty:num(gi(r,"QUANTITY")),uom:clean(gi(r,"UOM")),value:num(gi(r,"SUBTOTAL")),so:so});
           });
           return;
