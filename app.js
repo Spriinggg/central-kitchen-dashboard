@@ -787,6 +787,8 @@ const PVD_CONV = {
   "myusitaliansauce":{u:"PKT",f:{CTN:4,PKT:1}}         // 1 KG X 4 PKT X CTN
   // still needed: Bolognese (ordered in BOX) — confirm PKT per BOX with Miss
 };
+let PVD_MONTH=null;  // "YYYY-MM" chosen in the card's month picker; null = auto (dominant demand month)
+function pvdSetMonth(v){ PVD_MONTH = v || null; renderPVD(); }
 function pvdKey(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
 // compact per-product daily demand for CK products — small enough to persist in Supabase
 function pvdBuildDaily(lines){
@@ -813,15 +815,16 @@ function pvdCompute(){
   dd.sort();
   if(!jd.length || !dd.length) return {err:"nodates"};
   const prodSpan=[jd[0],jd[jd.length-1]], demSpan=[dd[0],dd[dd.length-1]];
-  // compare BY MONTH: follow the dashboard's selected period when one is set (so PvD
-  // matches the month shown everywhere else); otherwise pick the month with the most demand.
+  // compare BY MONTH. The card's own month picker (PVD_MONTH) decides which month;
+  // when unset, default to the month with the most demand. Months offered = any month
+  // that has demand or production data.
   const pad=n=>String(n).padStart(2,"0");
+  const demMonths=Object.keys(monthCount);
+  // offer only months that have demand (a comparison needs demand), newest first
+  const monthsAvail=demMonths.slice().sort().reverse();
   let targetYM;
-  if(typeof CURRENT_RANGE!=="undefined" && CURRENT_RANGE && CURRENT_RANGE.from){
-    const f=CURRENT_RANGE.from; targetYM = f.getFullYear()+"-"+pad(f.getMonth()+1);
-  } else {
-    targetYM = Object.keys(monthCount).sort((a,b)=>monthCount[b]-monthCount[a])[0];
-  }
+  if(PVD_MONTH && monthsAvail.indexOf(PVD_MONTH)>=0) targetYM=PVD_MONTH;
+  else targetYM=demMonths.slice().sort((a,b)=>monthCount[b]-monthCount[a])[0];
   const [ty,tm]=targetYM.split("-").map(Number);
   const monthStart = targetYM+"-01";
   const lastDay = new Date(ty, tm, 0).getDate();
@@ -858,7 +861,7 @@ function pvdCompute(){
   });
   const order={under:0,over:1,ok:2,nopack:3,nodemand:4};
   rows.sort((a,b)=>(order[a.status]-order[b.status])||(b.prodQty-a.prodQty));
-  return {rows,winFrom,winTo,prodSpan,demSpan,truncated,monthLabel,monthEnd};
+  return {rows,winFrom,winTo,prodSpan,demSpan,truncated,monthLabel,monthEnd,monthsAvail,targetYM};
 }
 function renderPVD(){
   const el=document.getElementById("pvdList"); if(!el) return;
@@ -879,6 +882,13 @@ function renderPVD(){
   const compared=r.rows.filter(x=>x.cover!=null);
   const under=compared.filter(x=>x.status==="under").length, over=compared.filter(x=>x.status==="over").length;
   let h='<div class="src-badge live">● production vs demand · '+r.monthLabel+' ('+r.winFrom+' → '+r.winTo+')</div>';
+  // month picker — choose any month that has data, independent of the dashboard period
+  if(r.monthsAvail && r.monthsAvail.length){
+    const mName=ym=>{ const [y,m]=ym.split("-").map(Number); return new Date(y,m-1,1).toLocaleDateString(undefined,{month:"short",year:"numeric"}); };
+    h+='<div style="margin:6px 0 2px;font-size:12px;color:var(--text-mut)">Month: <select onchange="pvdSetMonth(this.value)" style="font-size:12px;padding:5px 10px;border-radius:14px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.7);outline:none;cursor:pointer">'
+      + r.monthsAvail.map(ym=>'<option value="'+ym+'"'+(ym===r.targetYM?' selected':'')+'>'+mName(ym)+'</option>').join('')
+      + '</select></div>';
+  }
   h+='<div style="font-size:11px;color:var(--text-mut);margin:2px 0 8px;">For each CK product: units produced vs units ordered by outlets, within the month, over the dates both reports cover. Demand converted to the production unit using pack-size. Coverage = produced as a % of demand (100% = exact match).</div>';
   // window warning
   if(r.truncated){
