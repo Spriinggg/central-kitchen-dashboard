@@ -773,11 +773,19 @@ const PVD_CONV = {
   "myuspersonaldough":{u:"PCS",f:{CTN:200}},
   "myusregulardough":{u:"PCS",f:{CTN:100}},
   "myuslargedough":{u:"PCS",f:{CTN:45}},
-  // sauces/paste: produced in PKT, ordered in PKT (1:1) — fill in CTN/BOX factors here as they're confirmed
+  // sauces/paste: produced in PKT. Pack-sizes (PKT per CTN) taken from Codemax item
+  // descriptions in the Cost / Requisition / GRN reports. PKT demand is 1:1.
   "myustomyumpaste":{u:"PKT",f:{PKT:1}},
   "myussambalgepuk":{u:"PKT",f:{PKT:1}},
   "myusmarshallsauce":{u:"PKT",f:{PKT:1}},
-  "myusspicysauce":{u:"PKT",f:{PKT:1}}
+  "myusspicysauce":{u:"PKT",f:{PKT:1}},
+  "myusduncansauce":{u:"PKT",f:{CTN:15,PKT:1}},        // 1 KG X 15 PKT X CTN
+  "myuslasagna":{u:"PKT",f:{CTN:8,PKT:1}},             // 2 PCS X 8 PKT X CTN
+  "myusgarlicbutter":{u:"PKT",f:{CTN:4,PKT:1}},        // 1 KG X 4 PKT X CTN
+  "myusmushroomsouppremix":{u:"PKT",f:{CTN:12,PKT:1}}, // 12 PKT X CTN
+  "myusitalianmayo":{u:"PKT",f:{CTN:12,PKT:1}},        // 500 GM X 12 PKT X CTN
+  "myusitaliansauce":{u:"PKT",f:{CTN:4,PKT:1}}         // 1 KG X 4 PKT X CTN
+  // still needed: Bolognese (ordered in BOX) — confirm PKT per BOX with Miss
 };
 function pvdKey(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
 // compact per-product daily demand for CK products — small enough to persist in Supabase
