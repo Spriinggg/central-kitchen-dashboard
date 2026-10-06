@@ -805,11 +805,16 @@ function pvdCompute(){
   dd.sort();
   if(!jd.length || !dd.length) return {err:"nodates"};
   const prodSpan=[jd[0],jd[jd.length-1]], demSpan=[dd[0],dd[dd.length-1]];
-  // compare BY MONTH: pick the month with the most demand (e.g. September), then
-  // clamp the window to where production data actually ends, so both sides cover the same dates.
-  const targetYM = Object.keys(monthCount).sort((a,b)=>monthCount[b]-monthCount[a])[0];
-  const [ty,tm]=targetYM.split("-").map(Number);
+  // compare BY MONTH: follow the dashboard's selected period when one is set (so PvD
+  // matches the month shown everywhere else); otherwise pick the month with the most demand.
   const pad=n=>String(n).padStart(2,"0");
+  let targetYM;
+  if(typeof CURRENT_RANGE!=="undefined" && CURRENT_RANGE && CURRENT_RANGE.from){
+    const f=CURRENT_RANGE.from; targetYM = f.getFullYear()+"-"+pad(f.getMonth()+1);
+  } else {
+    targetYM = Object.keys(monthCount).sort((a,b)=>monthCount[b]-monthCount[a])[0];
+  }
+  const [ty,tm]=targetYM.split("-").map(Number);
   const monthStart = targetYM+"-01";
   const lastDay = new Date(ty, tm, 0).getDate();
   const monthEnd = targetYM+"-"+pad(lastDay);
@@ -1016,7 +1021,7 @@ function applyData(out){
   if(A.weekly && A.weekly.days && A.weekly.days.length){ WEEKLY=A.weekly; weeklyLive=true; }
   window.__OUT__=out;
   if(typeof setLoadState==="function") setLoadState("");
-  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderWastage(out); renderMoM(); renderDetails();
+  render(); drawTrend(trendMetric); animateMetrics(); renderCost(out); renderWastage(out); renderMoM(); renderDetails(); renderPVD();
   const m=out.meta||{};
   const tb=document.getElementById("trendBadge"); if(tb) tb.innerHTML="● live · weekly from job production";
   renderDataInfo();
@@ -1143,7 +1148,7 @@ async function ckProcessUploaded(list){
       // merge with existing raw lines only if this session has them; a fresh session
       // loads a stored aggregate (no lines), so a new upload replaces it (full-range snapshot)
       DEMRAW = (DEMRAW && DEMRAW.lines) ? window.DEM.mergeRaw(DEMRAW, newD) : newD;
-      renderDemand(); renderPVD();
+      renderDemand(); renderPVD(); if(typeof render==="function") render();
       const db=window.DEM.build(DEMRAW);
       parts.push("Demand: "+db.lineCount+" lines · "+db.byOutlet.length+" outlets · RM "+Math.round(db.totalValue).toLocaleString()+" · "+db.dateFrom+"→"+db.dateTo);
       if(SB){
@@ -1257,7 +1262,7 @@ async function loadDemandFromSupabase(){
     const {data,error}=await SB.from("ck_state").select("payload").eq("id","demand").maybeSingle();
     if(error) throw error;
     if(data && data.payload && (data.payload.agg || data.payload.lines)){
-      DEMRAW=data.payload; renderDemand(); renderPVD();
+      DEMRAW=data.payload; renderDemand(); renderPVD(); if(typeof render==="function") render();
       if(DEMRAW.__uploadedAt) noteUpload(DEMRAW.__uploadedBy||"", DEMRAW.__uploadedAt);
       renderDataInfo();
       return true;
