@@ -631,6 +631,7 @@ function openSummary(){
   "</body></html>";
   const w=window.open("","_blank"); if(!w){ alert("Please allow pop-ups to open the summary."); return; }
   w.document.write(H); w.document.close();
+  auditLog("export", "Summary / PDF" + (CURRENT_RANGE ? " · "+fmtD(CURRENT_RANGE.from)+"→"+fmtD(CURRENT_RANGE.to) : ""));  // audit trail
   // trigger print from the opener (CSP-safe: no inline script inside the popup)
   setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} }, 400);
 }
