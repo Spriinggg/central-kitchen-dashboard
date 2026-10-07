@@ -625,9 +625,11 @@ function openSummary(){
   "<h2>Wastage by cause</h2><table>"+(causes||"<tr><td>No wastage records</td></tr>")+"</table>"+
   "<h2>High recipe-variance alerts</h2><table>"+(alerts||"<tr><td>None</td></tr>")+"</table>"+
   "<p class='foot'>US Pizza Central Kitchen dashboard · figures from ERP exports. Recipe-variance compares actual ERP consumption against the Codemax recipe standard, matched by item code, so large outliers are flags to verify, not confirmed loss.</p>"+
-  "<script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script></body></html>";
+  "</body></html>";
   const w=window.open("","_blank"); if(!w){ alert("Please allow pop-ups to open the summary."); return; }
   w.document.write(H); w.document.close();
+  // trigger print from the opener (CSP-safe: no inline script inside the popup)
+  setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} }, 400);
 }
 // ---- header "uploaded by / when" — reflects the most recent upload (CK or PKT) ----
 function noteUpload(by,at){ if(!at) return; if(!UPLOAD_INFO || !UPLOAD_INFO.at || new Date(at)>=new Date(UPLOAD_INFO.at)){ UPLOAD_INFO={by:by||"",at:at}; } }
@@ -885,7 +887,7 @@ function renderPVD(){
   // month picker — choose any month that has data, independent of the dashboard period
   if(r.monthsAvail && r.monthsAvail.length){
     const mName=ym=>{ const [y,m]=ym.split("-").map(Number); return new Date(y,m-1,1).toLocaleDateString(undefined,{month:"short",year:"numeric"}); };
-    h+='<div style="margin:6px 0 2px;font-size:12px;color:var(--text-mut)">Month: <select onchange="pvdSetMonth(this.value)" style="font-size:12px;padding:5px 10px;border-radius:14px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.7);outline:none;cursor:pointer">'
+    h+='<div style="margin:6px 0 2px;font-size:12px;color:var(--text-mut)">Month: <select id="pvdMonthSel" style="font-size:12px;padding:5px 10px;border-radius:14px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.7);outline:none;cursor:pointer">'
       + r.monthsAvail.map(ym=>'<option value="'+ym+'"'+(ym===r.targetYM?' selected':'')+'>'+mName(ym)+'</option>').join('')
       + '</select></div>';
   }
@@ -984,9 +986,9 @@ function renderPKT(){
   h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:12px 0 6px;">';
   h+='<span style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em">Dispatch log ('+pktRegion+') · '+total+' line(s)'+(pq?' · filter “'+pq+'”':'')+'</span>';
   h+='<span style="display:flex;align-items:center;gap:8px;font-size:12px;">'+
-     '<button onclick="pktLogPrev()" class="nav-btn" style="cursor:pointer;padding:3px 11px;'+(pktLogPage<=0?'opacity:.35;pointer-events:none;':'')+'">◀ Prev</button>'+
+     '<button data-pkt="prev" class="nav-btn" style="cursor:pointer;padding:3px 11px;'+(pktLogPage<=0?'opacity:.35;pointer-events:none;':'')+'">◀ Prev</button>'+
      '<span style="color:var(--text-soft);white-space:nowrap">'+(total?(start+1):0)+'–'+Math.min(start+PKT_LOG_PAGE,total)+' / '+total+'</span>'+
-     '<button onclick="pktLogNext()" class="nav-btn" style="cursor:pointer;padding:3px 11px;'+(pktLogPage>=pages-1?'opacity:.35;pointer-events:none;':'')+'">Next ▶</button>'+
+     '<button data-pkt="next" class="nav-btn" style="cursor:pointer;padding:3px 11px;'+(pktLogPage>=pages-1?'opacity:.35;pointer-events:none;':'')+'">Next ▶</button>'+
      '</span></div>';
   h+='<div class="tblwrap" style="max-height:340px;border:1px solid var(--glass-border);border-radius:10px;">';
   h+='<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:460px"><thead><tr>'+
@@ -1227,6 +1229,11 @@ async function ckProcessUploaded(list){
   const je=document.getElementById("jpcExport"); if(je) je.addEventListener("click",jpcExportCSV);
   const vs=document.getElementById("pvdSearch"); if(vs) vs.addEventListener("input",renderPVD);
   const ve=document.getElementById("pvdExport"); if(ve) ve.addEventListener("click",pvdExportCSV);
+  // delegated handlers (CSP-safe: no inline on* attributes)
+  const vl=document.getElementById("pvdList");
+  if(vl) vl.addEventListener("change",function(e){ if(e.target && e.target.id==="pvdMonthSel") pvdSetMonth(e.target.value); });
+  const pl=document.getElementById("pktList");
+  if(pl) pl.addEventListener("click",function(e){ const b=e.target.closest&&e.target.closest("button[data-pkt]"); if(!b)return; if(b.getAttribute("data-pkt")==="prev")pktLogPrev(); else pktLogNext(); });
 })();
 document.getElementById("ckProcess").addEventListener("click",function(){ ckProcessUploaded(document.getElementById("ckFiles").files); });
 document.getElementById("ckFiles").addEventListener("change",function(e){ if(e.target.files.length) ckProcessUploaded(e.target.files); });
