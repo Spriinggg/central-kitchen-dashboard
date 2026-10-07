@@ -662,6 +662,14 @@ function downloadCSV(filename, head, rows){
   var csv=[head.map(esc).join(",")].concat(rows.map(function(r){return r.map(esc).join(",");})).join("\n");
   var blob=new Blob([csv],{type:"text/csv"}); var a=document.createElement("a");
   a.href=URL.createObjectURL(blob); a.download=filename; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},100);
+  auditLog("export", filename+" ("+(rows?rows.length:0)+" rows)");   // audit trail
+}
+// ---- Audit log: records who did what, when (best-effort; a DB webhook fans out to Telegram/email) ----
+async function auditLog(action, detail){
+  try{
+    if(!SB) return;
+    await SB.from("audit_log").insert({ actor: (CURRENT_USER||"unknown"), action: action, detail: (detail||"") });
+  }catch(e){ /* best-effort — never block the user action */ }
 }
 // ---- DEMAND (Sales Orders CK -> outlets) ----
 let DEMRAW=null;
@@ -1142,6 +1150,7 @@ async function ckProcessUploaded(list){
       setDefaultRange(); rebuild();
       const m=window.CK.CKPipeline.build(RAW).meta;
       parts.push("CK: "+(m.unique_rows||0).toLocaleString()+" movements · "+m.item_count+" items · "+m.date_from+" → "+m.date_to+" · verified "+m.validation_match_pct+"%");
+      auditLog("upload","CK Stock Movement · "+m.date_from+"→"+m.date_to);
       if(SB){
         const pl=slimRaw(RAW); pl.__uploadedBy=CURRENT_USER||""; pl.__uploadedAt=nowIso;
         noteUpload(pl.__uploadedBy, pl.__uploadedAt);
@@ -1157,6 +1166,7 @@ async function ckProcessUploaded(list){
       refreshPKTSummary(); renderPKT(); if(typeof render==="function") render();
       const my=window.PKT_SUMMARY&&window.PKT_SUMMARY.MY, sg=window.PKT_SUMMARY&&window.PKT_SUMMARY.SG;
       parts.push("PKT: MY "+(my?my.totalOut:0)+" units/"+(my?my.outletCount:0)+" outlets · SG "+(sg?sg.totalOut:0)+" · dates "+(my?my.dateFrom:"")+"→"+(my?my.dateTo:""));
+      auditLog("upload","PKT dispatch · "+(my?my.dateFrom:"")+"→"+(my?my.dateTo:""));
       if(SB){
         PKTRAW.__uploadedBy=CURRENT_USER||""; PKTRAW.__uploadedAt=nowIso;
         noteUpload(PKTRAW.__uploadedBy, PKTRAW.__uploadedAt); renderDataInfo();
@@ -1174,6 +1184,7 @@ async function ckProcessUploaded(list){
       renderDemand(); renderPVD(); if(typeof render==="function") render();
       const db=window.DEM.build(DEMRAW);
       parts.push("Demand: "+db.lineCount+" lines · "+db.byOutlet.length+" outlets · RM "+Math.round(db.totalValue).toLocaleString()+" · "+db.dateFrom+"→"+db.dateTo);
+      auditLog("upload","Sales Order / demand · "+db.dateFrom+"→"+db.dateTo);
       if(SB){
         // store only the aggregated view (small) — raw 37k+ lines time out the DB write.
         // ckDaily = compact per-CK-product daily demand, so Production-vs-Demand survives a reload.
@@ -1192,6 +1203,7 @@ async function ckProcessUploaded(list){
       renderJPC(); renderPVD();
       const jb=window.JPC.build(JPCRAW);
       parts.push("Job Costing: "+jb.jobCount+" jobs · "+jb.productCount+" products · RM "+Math.round(jb.totalCost).toLocaleString()+" · "+jb.alerts.length+" flagged · "+jb.dateFrom+"→"+jb.dateTo);
+      auditLog("upload","Job Production Costing · "+jb.dateFrom+"→"+jb.dateTo);
       if(SB){
         JPCRAW.__uploadedBy=CURRENT_USER||""; JPCRAW.__uploadedAt=nowIso;
         noteUpload(JPCRAW.__uploadedBy, JPCRAW.__uploadedAt); renderDataInfo();
