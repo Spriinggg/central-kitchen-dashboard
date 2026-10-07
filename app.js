@@ -568,7 +568,10 @@ function renderMoM(){
   const el=document.getElementById("momCard"); if(!el) return;
   if(!RAW||!FULL_MAX){ el.style.display="none"; return; }
   el.style.display="";
-  const y=FULL_MAX.getFullYear(), m=FULL_MAX.getMonth(), day=FULL_MAX.getDate();
+  // anchor the comparison on the month being VIEWED (selected range), not the latest data date,
+  // so a stray next-month record doesn't collapse the card to a 1-day month.
+  const anchor = (CURRENT_RANGE && CURRENT_RANGE.to) ? CURRENT_RANGE.to : FULL_MAX;
+  const y=anchor.getFullYear(), m=anchor.getMonth(), day=anchor.getDate();
   const daysPrev=new Date(y,m,0).getDate(); const pEnd=Math.min(day,daysPrev);
   const currR={from:new Date(y,m,1), to:new Date(y,m,day,23,59,59)};
   const prevR={from:new Date(y,m-1,1), to:new Date(y,m-1,pEnd,23,59,59)};
