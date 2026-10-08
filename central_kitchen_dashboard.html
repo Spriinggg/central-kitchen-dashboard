@@ -56,6 +56,23 @@
     <div id="ckStatus" style="font-size:12.5px;color:var(--text-soft);margin-top:10px;"></div>
   </div>
 
+  <div class="card" id="resetCard" style="margin-bottom:16px;">
+    <p class="card-title">🧹 Reset data · needs admin approval</p>
+    <p style="font-size:12.5px;color:var(--text-soft);margin:2px 0 10px;line-height:1.6;">Requesting a reset does <b>not</b> delete anything right away — an admin must approve first (the person who requests cannot approve their own request). Every request and decision is logged and notified.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <select id="resetScope" style="font-size:12px;padding:7px 12px;border-radius:14px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.7);outline:none;cursor:pointer;">
+        <option value="all">All data</option>
+        <option value="latest">CK stock only</option>
+        <option value="demand">Demand only</option>
+        <option value="jobcost">Job costing only</option>
+        <option value="pkt">PKT only</option>
+      </select>
+      <button id="resetRequestBtn" class="nav-btn" style="cursor:pointer;">Request reset</button>
+      <span id="resetMsg" style="font-size:12px;color:var(--text-soft);"></span>
+    </div>
+    <div id="pendingResets" style="margin-top:14px;"></div>
+  </div>
+
   <div id="banner" style="border-radius:12px; padding:12px 16px; margin-bottom:16px; font-size:14px; font-weight:500; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid var(--glass-border);"></div>
 
   <!-- Controls -->

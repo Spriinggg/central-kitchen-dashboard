@@ -505,6 +505,8 @@ let SB=null;
 try{ if(window.supabase) SB=window.supabase.createClient(SB_URL,SB_KEY,{auth:{storage:window.sessionStorage,persistSession:true,autoRefreshToken:true}}); }catch(e){ console.warn("supabase init failed",e); }
 let RAW=null;
 let CURRENT_USER="";      // display name (or email) of the signed-in user (for "uploaded by")
+let CURRENT_EMAIL="";     // the signed-in user's email (for admin check / reset requests)
+let IS_ADMIN=false;
 let UPLOAD_INFO=null;     // {by, at} of the last upload that populated the shared data
 // Prefer a Supabase display name (set in Authentication → Users → User Metadata:
 // full_name / name / display_name); fall back to email if none is set.
@@ -672,6 +674,50 @@ async function auditLog(action, detail){
     await SB.from("audit_log").insert({ actor: (CURRENT_USER||"unknown"), action: action, detail: (detail||"") });
   }catch(e){ /* best-effort — never block the user action */ }
 }
+
+// ---- Maker-checker RESET: request (any user) → admin approve → data cleared ----
+async function resetRequest(){
+  if(!SB) return;
+  const scope=((document.getElementById("resetScope")||{}).value)||"all";
+  const msg=document.getElementById("resetMsg"); if(!msg) return;
+  if(!confirm('Request a reset of "'+scope+'"?\nNothing is deleted yet — an admin must approve first.')) return;
+  msg.style.color="var(--text-soft)"; msg.textContent="Sending request…";
+  const {error}=await SB.rpc("request_reset",{p_scope:scope});
+  if(error){ msg.style.color="var(--red)"; msg.textContent=error.message; }
+  else { msg.style.color="var(--green)"; msg.textContent="✓ Request sent — waiting for an admin to approve."; renderPendingResets(); }
+}
+async function renderPendingResets(){
+  const el=document.getElementById("pendingResets"); if(!el||!SB) return;
+  try{ const {data:adm}=await SB.rpc("is_admin"); IS_ADMIN=!!adm; }catch(e){ IS_ADMIN=false; }
+  const {data,error}=await SB.from("reset_requests").select("*").eq("status","pending").order("requested_at",{ascending:false});
+  if(error){ el.innerHTML=""; return; }
+  if(!data||!data.length){ el.innerHTML='<div style="font-size:12px;color:var(--text-mut)">No pending reset requests.</div>'; return; }
+  let h='<div style="font-size:10.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px">Pending reset requests'+(IS_ADMIN?' · you can approve/reject':'')+'</div>';
+  data.forEach(function(r){
+    h+='<div class="line" style="align-items:center"><span style="max-width:60%">'+r.scope
+      +'<br><span style="font-size:10.5px;color:var(--text-mut)">by '+r.requested_by+' · '+String(r.requested_at||"").slice(0,16).replace("T"," ")+'</span></span>';
+    if(IS_ADMIN) h+='<span style="display:flex;gap:6px"><button class="nav-btn rr-ap" data-id="'+r.id+'" style="cursor:pointer;padding:3px 11px">Approve</button>'
+      +'<button class="nav-btn rr-rj" data-id="'+r.id+'" style="cursor:pointer;padding:3px 11px;color:var(--red)">Reject</button></span>';
+    else h+='<span style="font-size:11px;color:var(--amber)">pending</span>';
+    h+='</div>';
+  });
+  el.innerHTML=h;
+}
+async function resetDecide(id, approve){
+  if(!SB) return;
+  const msg=document.getElementById("resetMsg");
+  const {error}=await SB.rpc(approve?"approve_reset":"reject_reset",{p_id:Number(id)});
+  if(error){ if(msg){ msg.style.color="var(--red)"; msg.textContent=error.message; } return; }
+  if(msg){ msg.style.color="var(--green)"; msg.textContent= approve?"✓ Approved — data cleared.":"Request rejected."; }
+  await renderPendingResets();
+  if(approve) setTimeout(function(){ location.reload(); }, 900);  // data was cleared — refresh
+}
+(function(){
+  const rb=document.getElementById("resetRequestBtn"); if(rb) rb.addEventListener("click", resetRequest);
+  const pr=document.getElementById("pendingResets");
+  if(pr) pr.addEventListener("click",function(e){ const b=e.target.closest&&e.target.closest("button[data-id]"); if(!b) return;
+    resetDecide(b.getAttribute("data-id"), b.classList.contains("rr-ap")); });
+})();
 // ---- DEMAND (Sales Orders CK -> outlets) ----
 let DEMRAW=null;
 function demandView(){
@@ -1336,6 +1382,7 @@ async function initApp(){
   const okj=await loadJPCFromSupabase();
   renderJPC();  // show empty-state message if no job-costing data yet
   renderPVD();  // production-vs-demand (shows its own empty state until both datasets exist)
+  renderPendingResets(); // maker-checker reset panel
   if(ok||okp||okd||okj){ setLoadState(""); }
   else { setLoadState("No data loaded yet — upload the ERP / PKT / Sales Order / Job Costing files below to populate the dashboard."); }
 }
@@ -1350,7 +1397,7 @@ if(_lf) _lf.addEventListener("submit", async function(e){
   if(!SB){ err.style.color="var(--red)"; err.textContent="Supabase not connected."; return; }
   const {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
   if(error){ err.style.color="var(--red)"; err.textContent=error.message; }
-  else { CURRENT_USER=userLabel(data&&data.user)||em; err.textContent=""; showApp(); resetIdle(); }
+  else { CURRENT_USER=userLabel(data&&data.user)||em; CURRENT_EMAIL=(data&&data.user&&data.user.email)||em; err.textContent=""; showApp(); resetIdle(); }
 });
 async function doSignOut(reason){ try{ if(SB) await SB.auth.signOut(); }catch(e){} location.reload(); }
 const _lo=document.getElementById("logoutBtn");
@@ -1374,7 +1421,7 @@ function resetIdle(){
   try{ const {data}=await SB.auth.getSession();
     if(data && data.session){
       if(idleTooLong()){ try{ await SB.auth.signOut(); }catch(e){} try{ localStorage.removeItem("ck_lastActive"); }catch(e){} showLogin(); return; }
-      CURRENT_USER=userLabel(data.session.user); showApp(); resetIdle();
+      CURRENT_USER=userLabel(data.session.user); CURRENT_EMAIL=(data.session.user&&data.session.user.email)||""; showApp(); resetIdle();
     } else { showLogin(); }
   } catch(e){ showLogin(); }
 })();
