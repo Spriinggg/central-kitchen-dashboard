@@ -1400,7 +1400,7 @@ async function otpSend(){
   try{
     const {error}=await SB.auth.signInWithOtp({ email: CURRENT_EMAIL, options:{ shouldCreateUser:false } });
     if(error){ if(info) info.textContent=""; if(err){ err.style.color="var(--red)"; err.textContent=error.message; } }
-    else if(info){ info.textContent="We emailed a 6-digit code to "+CURRENT_EMAIL+". Enter it below to continue."; }
+    else if(info){ info.textContent="We emailed a verification code to "+CURRENT_EMAIL+". Enter it below to continue."; }
   }catch(e){ if(err){ err.style.color="var(--red)"; err.textContent=String(e); } }
 }
 // decide: straight into the app, or force re-verification first
