@@ -1388,6 +1388,47 @@ async function initApp(){
 }
 function showApp(){ document.getElementById("loginOverlay").style.display="none"; const w=document.querySelector(".wrap"); if(w) w.style.display=""; initApp(); }
 function showLogin(){ document.getElementById("loginOverlay").style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
+
+// ---- 30-DAY RE-VERIFICATION (OTP) ----
+function showOtp(){ document.getElementById("loginOverlay").style.display="none"; var o=document.getElementById("otpOverlay"); if(o) o.style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
+function hideOtp(){ var o=document.getElementById("otpOverlay"); if(o) o.style.display="none"; }
+async function otpSend(){
+  var info=document.getElementById("otpInfo"), err=document.getElementById("otpErr");
+  if(err) err.textContent="";
+  if(info){ info.style.color="var(--text-soft)"; info.textContent="Sending a verification code to "+CURRENT_EMAIL+"…"; }
+  if(!SB){ return; }
+  try{
+    const {error}=await SB.auth.signInWithOtp({ email: CURRENT_EMAIL, options:{ shouldCreateUser:false } });
+    if(error){ if(info) info.textContent=""; if(err){ err.style.color="var(--red)"; err.textContent=error.message; } }
+    else if(info){ info.textContent="We emailed a 6-digit code to "+CURRENT_EMAIL+". Enter it below to continue."; }
+  }catch(e){ if(err){ err.style.color="var(--red)"; err.textContent=String(e); } }
+}
+// decide: straight into the app, or force re-verification first
+async function gateThenShowApp(){
+  if(!SB){ showApp(); resetIdle(); return; }
+  var need=false;
+  try{ const {data}=await SB.rpc("needs_reverify"); need=!!data; }catch(e){ need=false; }
+  if(!need){ showApp(); resetIdle(); return; }
+  showOtp(); otpSend();
+}
+const _otf=document.getElementById("otpForm");
+if(_otf) _otf.addEventListener("submit", async function(e){
+  e.preventDefault();
+  var code=((document.getElementById("otpCode")||{}).value||"").trim();
+  var err=document.getElementById("otpErr");
+  if(!code){ if(err){ err.style.color="var(--red)"; err.textContent="Enter the code."; } return; }
+  if(err){ err.style.color="var(--text-soft)"; err.textContent="Verifying…"; }
+  try{
+    const {data,error}=await SB.auth.verifyOtp({ email: CURRENT_EMAIL, token: code, type:"email" });
+    if(error){ if(err){ err.style.color="var(--red)"; err.textContent=error.message; } return; }
+    if(data&&data.user){ CURRENT_USER=userLabel(data.user)||CURRENT_USER; CURRENT_EMAIL=data.user.email||CURRENT_EMAIL; }
+    try{ await SB.rpc("mark_verified"); }catch(e){}
+    hideOtp(); showApp(); resetIdle();
+  }catch(e){ if(err){ err.style.color="var(--red)"; err.textContent=String(e); } }
+});
+const _otr=document.getElementById("otpResend");
+if(_otr) _otr.addEventListener("click", function(){ otpSend(); });
+
 const _lf=document.getElementById("loginForm");
 if(_lf) _lf.addEventListener("submit", async function(e){
   e.preventDefault();
@@ -1397,7 +1438,7 @@ if(_lf) _lf.addEventListener("submit", async function(e){
   if(!SB){ err.style.color="var(--red)"; err.textContent="Supabase not connected."; return; }
   const {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
   if(error){ err.style.color="var(--red)"; err.textContent=error.message; }
-  else { CURRENT_USER=userLabel(data&&data.user)||em; CURRENT_EMAIL=(data&&data.user&&data.user.email)||em; err.textContent=""; showApp(); resetIdle(); }
+  else { CURRENT_USER=userLabel(data&&data.user)||em; CURRENT_EMAIL=(data&&data.user&&data.user.email)||em; err.textContent=""; gateThenShowApp(); }
 });
 async function doSignOut(reason){ try{ if(SB) await SB.auth.signOut(); }catch(e){} location.reload(); }
 const _lo=document.getElementById("logoutBtn");
@@ -1421,7 +1462,7 @@ function resetIdle(){
   try{ const {data}=await SB.auth.getSession();
     if(data && data.session){
       if(idleTooLong()){ try{ await SB.auth.signOut(); }catch(e){} try{ localStorage.removeItem("ck_lastActive"); }catch(e){} showLogin(); return; }
-      CURRENT_USER=userLabel(data.session.user); CURRENT_EMAIL=(data.session.user&&data.session.user.email)||""; showApp(); resetIdle();
+      CURRENT_USER=userLabel(data.session.user); CURRENT_EMAIL=(data.session.user&&data.session.user.email)||""; gateThenShowApp();
     } else { showLogin(); }
   } catch(e){ showLogin(); }
 })();
