@@ -507,6 +507,7 @@ let RAW=null;
 let CURRENT_USER="";      // display name (or email) of the signed-in user (for "uploaded by")
 let CURRENT_EMAIL="";     // the signed-in user's email (for admin check / reset requests)
 let IS_ADMIN=false;
+let AUDIT_ROWS=[], AUDIT_PAGE=0, AUDIT_FILTER="all", AUDIT_SEARCH="";  // activity-log viewer state
 let UPLOAD_INFO=null;     // {by, at} of the last upload that populated the shared data
 // Prefer a Supabase display name (set in Authentication → Users → User Metadata:
 // full_name / name / display_name); fall back to email if none is set.
@@ -717,6 +718,68 @@ async function resetDecide(id, approve){
   const pr=document.getElementById("pendingResets");
   if(pr) pr.addEventListener("click",function(e){ const b=e.target.closest&&e.target.closest("button[data-id]"); if(!b) return;
     resetDecide(b.getAttribute("data-id"), b.classList.contains("rr-ap")); });
+})();
+
+// ---- ACTIVITY LOG VIEWER (admin only) ----
+function auditEsc(s){ s=String(s==null?"":s); return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function auditEmoji(a){ a=(a||"").toLowerCase();
+  if(a==="upload")return"📥"; if(a==="export")return"📤";
+  if(a==="reset_request")return"⚠️"; if(a==="reset_approved")return"🗑️";
+  if(a==="reset_rejected")return"🚫"; if(a==="reverify")return"🔐"; return"🔔"; }
+async function initAudit(){
+  const card=document.getElementById("auditCard"); if(!card||!SB) return;
+  let adm=IS_ADMIN;
+  try{ const {data}=await SB.rpc("is_admin"); adm=!!data; }catch(e){}
+  if(!adm){ card.style.display="none"; return; }
+  card.style.display="";
+  await loadAudit();
+}
+async function loadAudit(){
+  if(!SB) return;
+  try{
+    const {data,error}=await SB.from("audit_log")
+      .select("actor,action,detail,created_at")
+      .order("created_at",{ascending:false}).limit(500);
+    AUDIT_ROWS = (error||!data) ? [] : data;
+  }catch(e){ AUDIT_ROWS=[]; }
+  AUDIT_PAGE=0; renderAudit();
+}
+function renderAudit(){
+  const list=document.getElementById("auditList"); if(!list) return;
+  let rows=AUDIT_ROWS.slice();
+  if(AUDIT_FILTER!=="all") rows=rows.filter(function(r){ const a=(r.action||"").toLowerCase();
+    return AUDIT_FILTER==="reset" ? a.indexOf("reset")===0 : a===AUDIT_FILTER; });
+  if(AUDIT_SEARCH){ const q=AUDIT_SEARCH.toLowerCase();
+    rows=rows.filter(function(r){ return ((r.actor||"")+" "+(r.action||"")+" "+(r.detail||"")).toLowerCase().indexOf(q)>=0; }); }
+  const per=12, total=rows.length, pages=Math.max(1,Math.ceil(total/per));
+  if(AUDIT_PAGE>=pages) AUDIT_PAGE=pages-1; if(AUDIT_PAGE<0) AUDIT_PAGE=0;
+  const slice=rows.slice(AUDIT_PAGE*per,(AUDIT_PAGE+1)*per);
+  if(!slice.length){ list.innerHTML='<div style="padding:14px;color:var(--text-mut);font-size:12.5px">No activity found.</div>'; }
+  else {
+    let h="";
+    slice.forEach(function(r){
+      let when=""; try{ when=new Date(r.created_at).toLocaleString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }catch(e){ when=String(r.created_at||""); }
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--glass-border);">'
+        +'<span style="font-size:15px;line-height:1">'+auditEmoji(r.action)+'</span>'
+        +'<span style="width:112px;color:var(--text-mut);font-size:11px;white-space:nowrap">'+auditEsc(when)+'</span>'
+        +'<span style="flex:1;font-size:12.5px;min-width:0"><b>'+auditEsc(r.actor||"unknown")+'</b> &middot; <span style="color:var(--text-soft)">'+auditEsc(r.detail||r.action||"")+'</span></span>'
+        +'</div>';
+    });
+    list.innerHTML=h;
+  }
+  const info=document.getElementById("auditPageInfo");
+  if(info) info.textContent = total ? ((AUDIT_PAGE*per+1)+"–"+Math.min((AUDIT_PAGE+1)*per,total)+" of "+total) : "0 of 0";
+}
+(function(){
+  const s=document.getElementById("auditSearch");
+  if(s) s.addEventListener("input", function(){ AUDIT_SEARCH=this.value.trim(); AUDIT_PAGE=0; renderAudit(); });
+  const f=document.getElementById("auditFilter");
+  if(f) f.addEventListener("change", function(){ AUDIT_FILTER=this.value; AUDIT_PAGE=0; renderAudit(); });
+  const rf=document.getElementById("auditRefresh");
+  if(rf) rf.addEventListener("click", function(){ loadAudit(); });
+  const pg=document.getElementById("auditPager");
+  if(pg) pg.addEventListener("click", function(e){ const b=e.target.closest&&e.target.closest("button[data-aud]"); if(!b) return;
+    if(b.getAttribute("data-aud")==="prev") AUDIT_PAGE--; else AUDIT_PAGE++; renderAudit(); });
 })();
 // ---- DEMAND (Sales Orders CK -> outlets) ----
 let DEMRAW=null;
@@ -1383,6 +1446,7 @@ async function initApp(){
   renderJPC();  // show empty-state message if no job-costing data yet
   renderPVD();  // production-vs-demand (shows its own empty state until both datasets exist)
   renderPendingResets(); // maker-checker reset panel
+  initAudit();           // activity-log viewer (admin only)
   if(ok||okp||okd||okj){ setLoadState(""); }
   else { setLoadState("No data loaded yet — upload the ERP / PKT / Sales Order / Job Costing files below to populate the dashboard."); }
 }
