@@ -1453,45 +1453,89 @@ async function initApp(){
 function showApp(){ document.getElementById("loginOverlay").style.display="none"; const w=document.querySelector(".wrap"); if(w) w.style.display=""; initApp(); }
 function showLogin(){ document.getElementById("loginOverlay").style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
 
-// ---- 30-DAY RE-VERIFICATION (OTP) ----
-function showOtp(){ document.getElementById("loginOverlay").style.display="none"; var o=document.getElementById("otpOverlay"); if(o) o.style.display="flex"; const w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
-function hideOtp(){ var o=document.getElementById("otpOverlay"); if(o) o.style.display="none"; }
-async function otpSend(){
-  var info=document.getElementById("otpInfo"), err=document.getElementById("otpErr");
-  if(err) err.textContent="";
-  if(info){ info.style.color="var(--text-soft)"; info.textContent="Sending a verification code to "+CURRENT_EMAIL+"…"; }
-  if(!SB){ return; }
-  try{
-    const {error}=await SB.auth.signInWithOtp({ email: CURRENT_EMAIL, options:{ shouldCreateUser:false } });
-    if(error){ if(info) info.textContent=""; if(err){ err.style.color="var(--red)"; err.textContent=error.message; } }
-    else if(info){ info.textContent="We emailed a verification code to "+CURRENT_EMAIL+". Enter it below to continue."; }
-  }catch(e){ if(err){ err.style.color="var(--red)"; err.textContent=String(e); } }
-}
-// decide: straight into the app, or force re-verification first
-async function gateThenShowApp(){
+// ---- TWO-FACTOR AUTHENTICATION (TOTP via authenticator app) ----
+let TFA_FACTOR=null, TFA_CHALLENGE=null, TFA_MODE="verify"; // "enroll" | "verify"
+function showTfa(){ document.getElementById("loginOverlay").style.display="none"; var o=document.getElementById("tfaOverlay"); if(o) o.style.display="flex"; var w=document.querySelector(".wrap"); if(w) w.style.display="none"; }
+function hideTfa(){ var o=document.getElementById("tfaOverlay"); if(o) o.style.display="none"; }
+
+// After sign-in: go straight in (already 2FA'd), ask for a code, or set up 2FA first time.
+async function gate2fa(){
   if(!SB){ showApp(); resetIdle(); return; }
-  var need=false;
-  try{ const {data}=await SB.rpc("needs_reverify"); need=!!data; }catch(e){ need=false; }
-  if(!need){ showApp(); resetIdle(); return; }
-  showOtp(); otpSend();
+  let cur="aal1", next="aal1";
+  try{ const {data}=await SB.auth.mfa.getAuthenticatorAssuranceLevel(); if(data){ cur=data.currentLevel||cur; next=data.nextLevel||next; } }catch(e){}
+  if(cur==="aal2"){ showApp(); resetIdle(); return; }      // already passed 2FA this session
+  if(next==="aal2"){ await tfaStartChallenge(); return; }  // has a factor -> must enter a code
+  await tfaStartEnroll();                                   // no factor yet -> set one up
 }
-const _otf=document.getElementById("otpForm");
-if(_otf) _otf.addEventListener("submit", async function(e){
-  e.preventDefault();
-  var code=((document.getElementById("otpCode")||{}).value||"").trim();
-  var err=document.getElementById("otpErr");
-  if(!code){ if(err){ err.style.color="var(--red)"; err.textContent="Enter the code."; } return; }
-  if(err){ err.style.color="var(--text-soft)"; err.textContent="Verifying…"; }
+
+async function tfaStartEnroll(){
+  TFA_MODE="enroll";
+  var title=document.getElementById("tfaTitle"), info=document.getElementById("tfaInfo"),
+      qrWrap=document.getElementById("tfaQrWrap"), qr=document.getElementById("tfaQr"),
+      sec=document.getElementById("tfaSecret"), err=document.getElementById("tfaErr");
+  if(title) title.textContent="Set up two-factor";
+  if(err) err.textContent="";
+  if(info) info.textContent="Scan this QR with Google Authenticator (or any authenticator app), then enter the 6-digit code it shows.";
+  showTfa();
   try{
-    const {data,error}=await SB.auth.verifyOtp({ email: CURRENT_EMAIL, token: code, type:"email" });
+    // clear any leftover unverified factor so enrol doesn't clash
+    try{ const {data:fl}=await SB.auth.mfa.listFactors();
+      var stale=((fl&&fl.all)||[]).filter(function(f){ return f.status!=="verified"; });
+      for(var i=0;i<stale.length;i++){ try{ await SB.auth.mfa.unenroll({factorId:stale[i].id}); }catch(e){} }
+    }catch(e){}
+    const {data,error}=await SB.auth.mfa.enroll({ factorType:"totp", friendlyName:"CK-"+Date.now() });
     if(error){ if(err){ err.style.color="var(--red)"; err.textContent=error.message; } return; }
-    if(data&&data.user){ CURRENT_USER=userLabel(data.user)||CURRENT_USER; CURRENT_EMAIL=data.user.email||CURRENT_EMAIL; }
-    try{ await SB.rpc("mark_verified"); }catch(e){}
-    hideOtp(); showApp(); resetIdle();
+    TFA_FACTOR=data.id;
+    if(qr&&data.totp&&data.totp.qr_code){ qr.src=data.totp.qr_code; }
+    if(sec&&data.totp&&data.totp.secret){ sec.textContent="Manual key: "+data.totp.secret; }
+    if(qrWrap) qrWrap.style.display="";
   }catch(e){ if(err){ err.style.color="var(--red)"; err.textContent=String(e); } }
-});
-const _otr=document.getElementById("otpResend");
-if(_otr) _otr.addEventListener("click", function(){ otpSend(); });
+}
+
+async function tfaStartChallenge(){
+  TFA_MODE="verify";
+  var title=document.getElementById("tfaTitle"), info=document.getElementById("tfaInfo"),
+      qrWrap=document.getElementById("tfaQrWrap"), err=document.getElementById("tfaErr");
+  if(title) title.textContent="Two-factor verification";
+  if(err) err.textContent="";
+  if(qrWrap) qrWrap.style.display="none";
+  if(info) info.textContent="Open your authenticator app and enter the current 6-digit code for US Pizza CK.";
+  showTfa();
+  try{
+    const {data:fl}=await SB.auth.mfa.listFactors();
+    var v=((fl&&fl.totp)||[])[0];
+    if(!v){ await tfaStartEnroll(); return; }
+    TFA_FACTOR=v.id;
+    const {data,error}=await SB.auth.mfa.challenge({ factorId:v.id });
+    if(error){ if(err){ err.style.color="var(--red)"; err.textContent=error.message; } return; }
+    TFA_CHALLENGE=data.id;
+  }catch(e){ if(err){ err.style.color="var(--red)"; err.textContent=String(e); } }
+}
+
+(function(){
+  var f=document.getElementById("tfaForm");
+  if(f) f.addEventListener("submit", async function(e){
+    e.preventDefault();
+    var code=((document.getElementById("tfaCode")||{}).value||"").trim();
+    var err=document.getElementById("tfaErr");
+    if(!code){ if(err){ err.style.color="var(--red)"; err.textContent="Enter the code."; } return; }
+    if(err){ err.style.color="var(--text-soft)"; err.textContent="Verifying…"; }
+    try{
+      if(TFA_MODE==="enroll"){
+        const {data:ch,error:ce}=await SB.auth.mfa.challenge({ factorId:TFA_FACTOR });
+        if(ce){ if(err){ err.style.color="var(--red)"; err.textContent=ce.message; } return; }
+        const {error:ve}=await SB.auth.mfa.verify({ factorId:TFA_FACTOR, challengeId:ch.id, code:code });
+        if(ve){ if(err){ err.style.color="var(--red)"; err.textContent=ve.message; } return; }
+        try{ await auditLog("twofa_enrolled","Two-factor authentication set up"); }catch(e){}
+      } else {
+        const {error:ve}=await SB.auth.mfa.verify({ factorId:TFA_FACTOR, challengeId:TFA_CHALLENGE, code:code });
+        if(ve){ if(err){ err.style.color="var(--red)"; err.textContent=ve.message; } return; }
+        try{ await auditLog("twofa_verified","Signed in with two-factor"); }catch(e){}
+      }
+      hideTfa(); showApp(); resetIdle();
+    }catch(e){ if(err){ err.style.color="var(--red)"; err.textContent=String(e); } }
+  });
+})();
 
 const _lf=document.getElementById("loginForm");
 if(_lf) _lf.addEventListener("submit", async function(e){
@@ -1502,7 +1546,7 @@ if(_lf) _lf.addEventListener("submit", async function(e){
   if(!SB){ err.style.color="var(--red)"; err.textContent="Supabase not connected."; return; }
   const {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
   if(error){ err.style.color="var(--red)"; err.textContent=error.message; }
-  else { CURRENT_USER=userLabel(data&&data.user)||em; CURRENT_EMAIL=(data&&data.user&&data.user.email)||em; err.textContent=""; gateThenShowApp(); }
+  else { CURRENT_USER=userLabel(data&&data.user)||em; CURRENT_EMAIL=(data&&data.user&&data.user.email)||em; err.textContent=""; gate2fa(); }
 });
 async function doSignOut(reason){ try{ if(SB) await SB.auth.signOut(); }catch(e){} location.reload(); }
 const _lo=document.getElementById("logoutBtn");
@@ -1526,7 +1570,7 @@ function resetIdle(){
   try{ const {data}=await SB.auth.getSession();
     if(data && data.session){
       if(idleTooLong()){ try{ await SB.auth.signOut(); }catch(e){} try{ localStorage.removeItem("ck_lastActive"); }catch(e){} showLogin(); return; }
-      CURRENT_USER=userLabel(data.session.user); CURRENT_EMAIL=(data.session.user&&data.session.user.email)||""; gateThenShowApp();
+      CURRENT_USER=userLabel(data.session.user); CURRENT_EMAIL=(data.session.user&&data.session.user.email)||""; gate2fa();
     } else { showLogin(); }
   } catch(e){ showLogin(); }
 })();
